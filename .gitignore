@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+
+# Environment files (local secrets)
+.env
+backend/.env
+
+# Uploaded files (user content - not for git)
+backend/uploads/products/*
+backend/uploads/chat/*
+backend/uploads/events/*
+backend/uploads/vouchers/*
+backend/uploads/profilepictures/*
+
+# Keep the upload directories and level icons
+!backend/uploads/products/.gitkeep
+!backend/uploads/chat/.gitkeep
+!backend/uploads/events/.gitkeep
+!backend/uploads/vouchers/.gitkeep
+!backend/uploads/profilepictures/.gitkeep
+!backend/uploads/levelicons/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+
+# Misc
+*.bak
+*.tmp

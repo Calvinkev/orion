@@ -1,0 +1,2710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Default API base URL (just base, /api path will be added by code) -->
+    <meta name="api-base-url" content="">
+    <title>Orion Music ADMIN</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app"></div>
+    <script src="js/api.js"></script>
+    <script>
+        // Global API base - prefer meta override, then same origin.
+        // Note: This should NOT include /api suffix, just the base URL
+        window.RANKSCIENCE_API_BASE_URL = (function(){
+            const m = document.querySelector('meta[name="api-base-url"]');
+            if (m && m.content) {
+                // If meta tag has /api, strip it since we'll add it in fetch calls
+                return m.content.replace(/\/api\/?$/, '').replace(/\/$/, '');
+            }
+            return `${window.location.protocol}//${window.location.host}`;
+        })();
+
+    </script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            
+            if (!requireAdmin()) {
+                return;
+            }
+            
+            loadInitialData();
+            startNotificationPolling();
+        });
+
+        let adminState = {
+            currentPage: 'overview',
+            users: [],
+            products: [],
+            withdrawals: [],
+            withdrawalFilter: 'all',
+            commissionRates: [],
+            levelSettings: [],
+            levelIcons: [],
+            stats: {},
+            modalOpen: false,
+            modalType: '',
+            selectedItem: null,
+            searchQuery: '',
+            selectedProducts: [],
+            vouchers: [],
+            clickedVouchers: [],
+            globalPopups: [],
+            notificationPollTimer: null,
+            chatUsers: [],
+            selectedChatUserId: null,
+            chatMessages: [],
+            chatUnreadCount: 0,
+            chatImageFile: null,
+            chatImagePreview: null,
+            events: []
+        };
+
+        async function loadInitialData() {
+            try {
+                await Promise.all([
+                    loadStats(), 
+                    loadUsers(), 
+                    loadProducts(), 
+                    loadWithdrawals(), 
+                    loadCommissionRates(), 
+                    loadLevelSettings(),
+                    loadLevelIcons(),
+                    loadVouchers(),
+                    loadClickedVouchers(),
+                    loadGlobalPopups(),
+                    loadAdminEvents()
+                ]);
+                render();
+            } catch (error) {
+                alert('Failed to load data: ' + error.message);
+            }
+        }
+
+        async function loadGlobalPopups() {
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/global-popups`, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('Failed to load global popups');
+                adminState.globalPopups = await resp.json();
+            } catch (e) {
+                adminState.globalPopups = [];
+            }
+        }
+
+        async function loadVouchers() {
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/vouchers`, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('Failed to load vouchers');
+                adminState.vouchers = await resp.json();
+            } catch (error) {
+                adminState.vouchers = [];
+            }
+        }
+
+        async function loadClickedVouchers() {
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/voucher-clicks`, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) {
+                    const errorText = await resp.text();
+                    throw new Error('Failed to load clicked vouchers: ' + resp.status);
+                }
+                const newClicks = await resp.json();
+                // Check if there are new clicks (for notification badge)
+                const oldCount = adminState.clickedVouchers.length;
+                adminState.clickedVouchers = newClicks;
+                // If new clicks were added, refresh the view if on notifications page
+                if (newClicks.length > oldCount && adminState.currentPage === 'notifications') {
+                    render();
+                } else if (newClicks.length !== oldCount) {
+                    // Update sidebar badge
+                    render();
+                }
+                return newClicks;
+            } catch (error) {
+                adminState.clickedVouchers = [];
+                throw error;
+            }
+        }
+
+        async function loadAdminEvents() {
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/events`, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('Failed to load events');
+                adminState.events = await resp.json();
+            } catch (error) {
+                adminState.events = [];
+            }
+        }
+
+        async function createEvent(formData) {
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/events`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                if (!resp.ok) {
+                    const error = await resp.json();
+                    throw new Error(error.error || 'Failed to create event');
+                }
+                alert('Event created successfully!');
+                await loadAdminEvents();
+                render();
+            } catch (error) {
+                alert('Failed to create event: ' + error.message);
+            }
+        }
+
+        async function deleteEvent(eventId) {
+            if (!confirm('Are you sure you want to delete this event?')) return;
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/events/${eventId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('Failed to delete event');
+                alert('Event deleted successfully!');
+                await loadAdminEvents();
+                render();
+            } catch (error) {
+                alert('Failed to delete event: ' + error.message);
+            }
+        }
+
+        async function refreshNotifications() {
+            const ids = adminState.clickedVouchers
+                .map(click => Number(click.popup_id || click.id))
+                .filter(id => Number.isInteger(id) && id > 0);
+            try {
+                const token = localStorage.getItem('token');
+                if (ids.length) {
+                    const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                    const resp = await fetch(`${API_URL}/api/admin/voucher-clicks/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({ ids })
+                    });
+                    if (!resp.ok) {
+                        const errorText = await resp.text();
+                        throw new Error(errorText || 'Failed to mark notifications as read');
+                    }
+                }
+            } catch (error) {
+                alert('Failed to refresh notifications: ' + (error.message || 'Unknown error'));
+            } finally {
+                try {
+                    await loadClickedVouchers();
+                } catch (error) {
+                }
+                render();
+            }
+        }
+
+        function startNotificationPolling() {
+            // Poll for new voucher clicks every 10 seconds
+            if (adminState.notificationPollTimer) {
+                clearInterval(adminState.notificationPollTimer);
+            }
+            adminState.notificationPollTimer = setInterval(() => {
+                loadClickedVouchers();
+            }, 10000);
+        }
+
+        function stopNotificationPolling() {
+            if (adminState.notificationPollTimer) {
+                clearInterval(adminState.notificationPollTimer);
+                adminState.notificationPollTimer = null;
+            }
+        }
+
+        async function loadStats() { 
+            try {
+                adminState.stats = await adminAPI.getStats(); 
+            } catch (error) {
+                adminState.stats = {};
+            }
+        }
+        
+        async function loadUsers() { 
+            try {
+                adminState.users = await adminAPI.getUsers(adminState.searchQuery); 
+            } catch (error) {
+                adminState.users = [];
+            }
+        }
+        
+        // Helper function to escape strings for safe use in HTML attributes and JavaScript
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        async function loadProducts() { 
+            try {
+                adminState.products = await adminAPI.getProducts(); 
+                adminState.selectedProducts = adminState.selectedProducts.filter(id => adminState.products.some(p => p.id === id));
+            } catch (error) {
+                adminState.products = [];
+            }
+        }
+        
+        async function loadWithdrawals() { 
+            try {
+                console.log('🔴 ADMIN FRONTEND: Fetching withdrawals from API...');
+                adminState.withdrawals = await adminAPI.getWithdrawals();
+                console.log('🔴 ADMIN FRONTEND: Received', adminState.withdrawals.length, 'withdrawals');
+                if (adminState.withdrawals.length > 0) {
+                    console.log('🔴 ADMIN FRONTEND: Sample withdrawal:', adminState.withdrawals[0]);
+                }
+            } catch (error) {
+                console.error('🔴 ADMIN FRONTEND: Error loading withdrawals:', error);
+                adminState.withdrawals = [];
+            }
+        }
+        
+        async function loadCommissionRates() { 
+            try {
+                adminState.commissionRates = await adminAPI.getCommissionRates(); 
+            } catch (error) {
+                adminState.commissionRates = [];
+            }
+        }
+        
+        async function loadLevelSettings() { 
+            try {
+                adminState.levelSettings = await adminAPI.getLevelSettings(); 
+            } catch (error) {
+                adminState.levelSettings = [];
+            }
+        }
+
+        async function loadLevelIcons() {
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/level-icons`);
+                if (response.ok) {
+                    adminState.levelIcons = await response.json();
+                } else {
+                    adminState.levelIcons = [];
+                }
+            } catch (error) {
+                adminState.levelIcons = [];
+            }
+        }
+
+        async function uploadLevelIcon(level) {
+            const input = document.getElementById(`levelIconInput${level}`);
+            if (!input || !input.files || !input.files[0]) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('icon', input.files[0]);
+            
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/level-icons/${level}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Upload failed');
+                
+                alert(`Level ${level} icon uploaded successfully!`);
+                await loadLevelIcons();
+                render();
+            } catch (error) {
+                alert('Failed to upload icon: ' + error.message);
+            }
+        }
+
+        async function deleteLevelIcon(level) {
+            if (!confirm(`Are you sure you want to delete the Level ${level} icon?`)) return;
+            
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/level-icons/${level}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Delete failed');
+                
+                alert(`Level ${level} icon deleted`);
+                await loadLevelIcons();
+                render();
+            } catch (error) {
+                alert('Failed to delete icon: ' + error.message);
+            }
+        }
+
+        // Chat functions
+        async function loadChatUsers() {
+            try {
+                adminState.chatUsers = await adminAPI.getChatUsers();
+            } catch (error) {
+                adminState.chatUsers = [];
+            }
+        }
+
+        async function loadChatMessages(userId) {
+            try {
+                adminState.chatMessages = await adminAPI.getChatMessages(userId);
+                adminState.selectedChatUserId = userId;
+                render();
+            } catch (error) {
+                adminState.chatMessages = [];
+            }
+        }
+
+        function handleAdminChatImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size must be less than 5MB');
+                return;
+            }
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                adminState.chatImageFile = file;
+                adminState.chatImagePreview = e.target.result;
+                render();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeAdminChatImage() {
+            adminState.chatImageFile = null;
+            adminState.chatImagePreview = null;
+            document.getElementById('adminChatImageInput').value = '';
+            render();
+        }
+
+        async function sendAdminChatMessage() {
+            const input = document.getElementById('adminChatInput');
+            const message = input?.value?.trim();
+            
+            if (!adminState.selectedChatUserId) return;
+            if (!message && !adminState.chatImageFile) return;
+            
+            try {
+                if (adminState.chatImageFile) {
+                    // Send with image
+                    const formData = new FormData();
+                    formData.append('userId', adminState.selectedChatUserId);
+                    if (message) formData.append('message', message);
+                    formData.append('image', adminState.chatImageFile);
+                    
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/chat/send-image`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+                    
+                    const text = await response.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Invalid response from server: ' + text.substring(0, 100));
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to send image');
+                    }
+                    
+                    
+                    // Clear image
+                    removeAdminChatImage();
+                } else {
+                    // Send text only
+                    await adminAPI.sendChatMessage(adminState.selectedChatUserId, message);
+                }
+                
+                input.value = '';
+                await loadChatMessages(adminState.selectedChatUserId);
+                await loadChatUsers(); // Refresh user list
+            } catch (error) {
+                alert('Failed to send message. Please try again.');
+            }
+        }
+
+        async function loadChatUnreadCount() {
+            try {
+                const data = await adminAPI.getChatUnreadCount();
+                adminState.chatUnreadCount = data.unreadCount || 0;
+            } catch (error) {
+            }
+        }
+
+        async function clearChatConversation(userId) {
+            if (!confirm('Are you sure you want to clear this conversation? This will only hide messages from your view. The user will still see all messages.')) {
+                return;
+            }
+            
+            try {
+                await adminAPI.clearChat(userId);
+                adminState.chatMessages = [];
+                alert('Chat conversation cleared from your view successfully!');
+                render();
+            } catch (error) {
+                alert('Failed to clear chat. Please try again.');
+            }
+        }
+
+        function logout() { 
+            authAPI.logout(); 
+        }
+        
+        function navigateTo(page) { 
+            adminState.currentPage = page;
+            if (page === 'chat') {
+                loadChatUsers();
+                loadChatUnreadCount();
+            }
+            render(); 
+        }
+        
+        function openModal(type, item = null) {
+            adminState.modalOpen = true; 
+            adminState.modalType = type; 
+            adminState.selectedItem = item; 
+            render(); 
+        }
+        
+        function closeModal() { 
+            adminState.modalOpen = false; 
+            adminState.modalType = ''; 
+            adminState.selectedItem = null; 
+            render(); 
+        }
+
+        async function searchUsers(query) { 
+            adminState.searchQuery = query; 
+            await loadUsers(); 
+            render(); 
+        }
+
+        function toggleProductSelection(productId, checked) {
+            const next = new Set(adminState.selectedProducts);
+            if (checked) {
+                next.add(productId);
+            } else {
+                next.delete(productId);
+            }
+            adminState.selectedProducts = Array.from(next);
+            render();
+        }
+
+        async function assignSelectedProducts() {
+            if (!adminState.selectedProducts.length) {
+                alert('Select at least one product');
+                return;
+            }
+            try {
+                await adminAPI.assignProducts(adminState.selectedProducts);
+                alert('Products assigned to all users');
+                adminState.selectedProducts = [];
+                await Promise.all([loadProducts(), loadUsers(), loadStats()]);
+                render();
+            } catch (error) {
+                alert('Assignment failed: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        async function handleManualAssignProduct(userId, selectId, bonusId, customPriceId) {
+            const selectEl = document.getElementById(selectId);
+            if (!selectEl) {
+                alert('Product list not ready');
+                return;
+            }
+            const productId = parseInt(selectEl.value, 10);
+            if (!productId) {
+                alert('Choose a product');
+                return;
+            }
+            const bonusEl = document.getElementById(bonusId);
+            const manualBonus = bonusEl ? parseFloat(bonusEl.value || '0') : 0;
+            const customPriceEl = document.getElementById(customPriceId);
+            const customPrice = customPriceEl ? (customPriceEl.value.trim() === '' ? null : parseFloat(customPriceEl.value)) : null;
+            try {
+                const result = await adminAPI.assignProductToUser(userId, productId, isNaN(manualBonus) ? 0 : manualBonus, customPrice);
+                
+                // Check if balance went negative
+                if (result && result.balanceIsNegative) {
+                    alert(`⚠️ Product Assigned!\n\nWarning: User's balance is now negative ($${result.newBalance.toFixed(2)}).\n\nThe user will see a deposit popup when they try to submit this product.\n\nProduct: ${result.productName}\nPrice: $${result.productPrice.toFixed(2)}`);
+                } else {
+                    alert('Product assigned to user successfully!');
+                }
+                
+                if (bonusEl) bonusEl.value = '';
+                if (customPriceEl) customPriceEl.value = '';
+                await Promise.all([loadUsers(), loadStats()]);
+                const refreshed = adminState.users.find(u => u.id === userId);
+                if (refreshed) {
+                    adminState.selectedItem = refreshed;
+                }
+                render();
+            } catch (error) {
+                alert('Manual assignment failed: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        function updateManualAssignmentPrice(userId, selectId, customPriceId) {
+            const selectEl = document.getElementById(selectId);
+            if (!selectEl) return;
+            
+            const selected = selectEl.options[selectEl.selectedIndex];
+            const user = adminState.users.find(u => u.id === userId);
+            if (!user || !selected) return;
+            
+            const levelPrice = selected.getAttribute('data-level' + (user.level || 1));
+            const priceDisplayEl = document.getElementById('manualPriceDisplay_' + userId);
+            if (priceDisplayEl) {
+                priceDisplayEl.textContent = `Current level price: $${levelPrice || '0.00'}`;
+            }
+        }
+
+        async function updateUserBalance() {
+            const newBalance = parseFloat(document.getElementById('newBalance').value);
+            if (isNaN(newBalance) || newBalance < 0) { 
+                alert('Invalid balance'); 
+                return; 
+            }
+            try { 
+                await adminAPI.updateUserBalance(adminState.selectedItem.id, newBalance); 
+                alert('Balance updated!'); 
+                await loadUsers(); 
+                closeModal(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function updateUserCommission() {
+            const newCommission = parseFloat(document.getElementById('newCommission').value);
+            if (isNaN(newCommission) || newCommission < 0) { 
+                alert('Invalid commission'); 
+                return; 
+            }
+            try { 
+                await adminAPI.updateUserCommission(adminState.selectedItem.id, newCommission); 
+                alert('Commission updated!'); 
+                await loadUsers(); 
+                closeModal(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function updateUserLevel() {
+            const newLevel = parseInt(document.getElementById('newLevel').value);
+            if (!newLevel || newLevel < 1 || newLevel > 5) { 
+                alert('Invalid level'); 
+                return; 
+            }
+            try { 
+                await adminAPI.updateUserLevel(adminState.selectedItem.id, newLevel); 
+                alert('Level updated!'); 
+                await loadUsers(); 
+                closeModal(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function resetUserPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (!newPassword || newPassword.length < 6) { 
+                alert('Password must be at least 6 characters'); 
+                return; 
+            }
+            try { 
+                await adminAPI.resetUserPassword(adminState.selectedItem.id, newPassword); 
+                alert('Password reset!'); 
+                closeModal(); 
+            } catch (error) { 
+                alert('Reset failed: ' + error.message); 
+            }
+        }
+
+        async function generateWithdrawOTP() {
+            if (!adminState.selectedItem) {
+                alert('No user selected');
+                return;
+            }
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/users/${adminState.selectedItem.id}/withdraw-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to generate OTP');
+                
+                // Display the OTP in a prominent way
+                const otpDisplay = document.getElementById('withdrawOTPDisplay');
+                const otpCode = document.getElementById('withdrawOTPCode');
+                if (otpDisplay && otpCode) {
+                    otpCode.textContent = data.otp;
+                    otpDisplay.style.display = 'block';
+                }
+                alert(`OTP Generated for ${data.username}!\n\nOTP: ${data.otp}\n\nExpires in: ${data.expiresIn}\n\nPlease give this code to the user via chat.`);
+            } catch (error) {
+                alert('Failed to generate OTP: ' + error.message);
+            }
+        }
+
+        async function deleteUserAccount(userId, username) {
+            const confirmMessage = `Are you sure you want to permanently delete the account for "${username}"?\n\nThis will delete:\n• User account\n• All balance history\n• All assigned products\n• All notifications\n• All chat messages\n• All withdrawal requests\n\nThis action CANNOT be undone!`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            // Double confirmation for safety
+            const finalConfirm = prompt(`Type "${username}" to confirm deletion:`);
+            if (finalConfirm !== username) {
+                alert('Deletion cancelled. Username did not match.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error;
+                    throw new Error(errorMsg || 'Failed to delete user');
+                }
+                
+                alert(`User "${username}" has been permanently deleted.`);
+                closeModal();
+                await loadUsers();
+            } catch (error) {
+                alert('Delete failed: ' + error.message);
+            }
+        }
+
+        async function uploadProduct(e) {
+            e.preventDefault();
+            const form = document.getElementById('productForm');
+            const formData = new FormData(form);
+            try { 
+                await adminAPI.uploadProduct(formData); 
+                alert('Product uploaded!'); 
+                await loadProducts(); 
+                closeModal(); 
+            } catch (error) { 
+                alert('Upload failed: ' + error.message); 
+            }
+        }
+
+        async function updateProduct(e) {
+            e.preventDefault();
+            const form = document.getElementById('productForm');
+            const formData = new FormData(form);
+            try { 
+                await adminAPI.updateProduct(adminState.selectedItem.id, formData); 
+                alert('Product updated!'); 
+                await loadProducts(); 
+                closeModal(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function toggleProductStatus(productId) {
+            try { 
+                await adminAPI.toggleProductStatus(productId); 
+                await loadProducts(); 
+                render(); 
+            } catch (error) { 
+                alert('Toggle failed: ' + error.message); 
+            }
+        }
+
+        async function deleteProduct(productId, productName) {
+            if (!confirm(`⚠️ PERMANENTLY DELETE "${productName}"?\n\nThis will:\n• Remove the product from the database\n• Delete all user assignments for this product\n• Remove the product image file\n\nThis action CANNOT be undone!`)) {
+                return;
+            }
+            
+            try { 
+                await adminAPI.deleteProduct(productId); 
+                alert(`✅ Product "${productName}" has been permanently deleted.`);
+                await loadProducts(); 
+                render(); 
+            } catch (error) { 
+                alert('Delete failed: ' + error.message); 
+            }
+        }
+
+        async function approveWithdrawal(withdrawalId) {
+            if (!confirm('Approve this withdrawal?')) return;
+            try { 
+                await adminAPI.approveWithdrawal(withdrawalId); 
+                alert('Withdrawal approved!'); 
+                await loadWithdrawals(); 
+                await loadUsers(); 
+                await loadStats(); 
+                render(); 
+            } catch (error) { 
+                alert('Approval failed: ' + error.message); 
+            }
+        }
+
+        async function rejectWithdrawal(withdrawalId) {
+            const reason = prompt('Rejection reason (optional):');
+            try { 
+                await adminAPI.rejectWithdrawal(withdrawalId, reason || ''); 
+                alert('Withdrawal rejected!'); 
+                await loadWithdrawals(); 
+                render(); 
+            } catch (error) { 
+                alert('Rejection failed: ' + error.message); 
+            }
+        }
+
+        async function setPendingWithdrawal(withdrawalId) {
+            if (!confirm('Set this withdrawal back to pending?')) return;
+            try { 
+                await adminAPI.setPendingWithdrawal(withdrawalId); 
+                alert('Withdrawal set to pending!'); 
+                await loadWithdrawals(); 
+                render(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function uploadVoucher(e) {
+            e.preventDefault();
+            const form = document.getElementById('voucherForm');
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            // Check file size before upload (10MB limit)
+            const fileInput = form.querySelector('input[type="file"]');
+            if (fileInput.files[0] && fileInput.files[0].size > 10 * 1024 * 1024) {
+                alert('File too large. Maximum size is 10MB.');
+                return;
+            }
+            
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
+                
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/vouchers`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Upload failed');
+                }
+                alert('Voucher uploaded successfully!');
+                await loadVouchers();
+                closeModal();
+            } catch (error) {
+                console.error('Voucher upload error:', error);
+                alert('Upload failed: ' + (error.message || 'Unknown error. Please try again.'));
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+
+        async function sendVoucherToUser(userId) {
+            const select = document.getElementById('voucherSelect_' + userId);
+            if (!select) {
+                alert('No voucher selected');
+                return;
+            }
+            const voucherId = parseInt(select.value, 10);
+            if (!voucherId) {
+                alert('Choose a voucher');
+                return;
+            }
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/popup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ userId, voucherId })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to send voucher');
+                }
+                alert('Voucher popup sent to user!');
+            } catch (e) {
+                alert(e.message || 'Failed to send voucher');
+            }
+        }
+
+        async function sendGlobalVoucherPopup() {
+            const select = document.getElementById('globalVoucherSelect');
+            const titleInput = document.getElementById('globalPopupTitle');
+            const messageInput = document.getElementById('globalPopupMessage');
+            const expiresInput = document.getElementById('globalPopupExpires');
+            
+            const voucherId = select ? parseInt(select.value, 10) : null;
+            const title = titleInput ? titleInput.value.trim() : '';
+            const message = messageInput ? messageInput.value.trim() : '';
+            const expiresInDays = expiresInput ? parseInt(expiresInput.value, 10) : null;
+            
+            if (!voucherId && !title) {
+                alert('Please select a voucher or enter a title');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/global-popup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ voucherId: voucherId || null, title, message, expiresInDays })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to create global popup');
+                }
+                alert('Global voucher popup created! All users will see it on their next login.');
+                if (select) select.value = '';
+                if (titleInput) titleInput.value = '';
+                if (messageInput) messageInput.value = '';
+                if (expiresInput) expiresInput.value = '';
+                await loadGlobalPopups();
+                render();
+            } catch (e) {
+                alert(e.message || 'Failed to create global popup');
+            }
+        }
+
+        async function toggleGlobalPopup(popupId) {
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/global-popup/${popupId}/toggle`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('Failed to toggle global popup');
+                await loadGlobalPopups();
+                render();
+            } catch (e) {
+                alert(e.message || 'Failed to toggle global popup');
+            }
+        }
+
+        async function deleteGlobalPopup(popupId) {
+            if (!confirm('Delete this global popup? This cannot be undone.')) return;
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/global-popup/${popupId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('Failed to delete global popup');
+                await loadGlobalPopups();
+                render();
+            } catch (e) {
+                alert(e.message || 'Failed to delete global popup');
+            }
+        }
+
+        async function sendNotificationToUser(userId) {
+            const titleInput = document.getElementById('notifyTitle_' + userId);
+            const messageInput = document.getElementById('notifyMessage_' + userId);
+            
+            const title = titleInput ? titleInput.value.trim() : '';
+            const message = messageInput ? messageInput.value.trim() : '';
+            
+            if (!title || !message) {
+                alert('Please enter both title and message');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/notify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ userId, title, message })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to send notification');
+                }
+                alert('Notification sent successfully!');
+                titleInput.value = '';
+                messageInput.value = '';
+            } catch (e) {
+                alert(e.message || 'Failed to send notification');
+            }
+        }
+
+        async function resetUserTasks(userId) {
+            if (!confirm('Reset tasks for this user? They will be able to continue to Set 2 (tasks 31-60).')) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/reset-user-tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ userId })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to reset tasks');
+                }
+                alert('Tasks reset! User can now continue to Set 2.');
+                closeModal();
+                loadUsers();
+            } catch (e) {
+                alert(e.message || 'Failed to reset tasks');
+            }
+        }
+
+        async function setNegativeBalanceTrigger(userId) {
+            const setNumber = document.getElementById('negBalSet_' + userId).value;
+            const submissionNumber = document.getElementById('negBalSubmission_' + userId).value;
+            const amount = document.getElementById('negBalAmount_' + userId).value;
+            
+            if (!setNumber || !submissionNumber || !amount) {
+                alert('Please fill in all fields: Set Number, Submission Number, and Amount');
+                return;
+            }
+            
+            if (parseInt(setNumber) < 1 || parseInt(setNumber) > 2) {
+                alert('Set number must be 1 or 2');
+                return;
+            }
+            
+            if (parseInt(submissionNumber) < 1) {
+                alert('Submission number must be at least 1');
+                return;
+            }
+            
+            if (parseFloat(amount) <= 0) {
+                alert('Amount must be greater than 0');
+                return;
+            }
+            
+            if (!confirm(`Set negative balance trigger for this user?\n\nWhen user reaches submission #${submissionNumber} in Set ${setNumber}, their balance will be reduced by $${parseFloat(amount).toFixed(2)}.`)) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/users/${userId}/negative-balance-trigger`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ 
+                        setNumber: parseInt(setNumber), 
+                        submissionNumber: parseInt(submissionNumber), 
+                        amount: parseFloat(amount) 
+                    })
+                });
+                const data = await resp.json();
+                if (!resp.ok) {
+                    throw new Error(data.error || 'Failed to set trigger');
+                }
+                alert(data.message || 'Negative balance trigger set successfully!');
+                closeModal();
+                loadUsers();
+            } catch (e) {
+                alert(e.message || 'Failed to set negative balance trigger');
+            }
+        }
+
+        async function clearNegativeBalanceTrigger(userId) {
+            if (!confirm('Clear the negative balance trigger for this user?')) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/users/${userId}/negative-balance-trigger`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ setNumber: null, submissionNumber: null, amount: null })
+                });
+                const data = await resp.json();
+                if (!resp.ok) {
+                    throw new Error(data.error || 'Failed to clear trigger');
+                }
+                alert(data.message || 'Negative balance trigger cleared!');
+                closeModal();
+                loadUsers();
+            } catch (e) {
+                alert(e.message || 'Failed to clear negative balance trigger');
+            }
+        }
+
+        async function updateCommissionRates() {
+            const rates = [];
+            for (let i = 1; i <= 5; i++) {
+                const rateInput = document.getElementById('commissionRate' + i);
+                const rate = parseFloat(rateInput.value) / 100;
+                if (isNaN(rate) || rate < 0 || rate > 1) { 
+                    alert('Invalid rate for Level ' + i); 
+                    return; 
+                }
+                rates.push({ level: i, rate });
+            }
+            try { 
+                await adminAPI.updateCommissionRates(rates); 
+                alert('Rates updated!'); 
+                await loadCommissionRates(); 
+                render(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function updateLevelSettings() {
+            const settings = [];
+            for (let i = 1; i <= 5; i++) {
+                const dailyLimit = parseInt(document.getElementById('dailyLimit' + i).value);
+                const totalTasks = parseInt(document.getElementById('totalTasks' + i).value);
+                const minBalance = parseFloat(document.getElementById('minBalance' + i).value);
+                const maxWithdraw = parseFloat(document.getElementById('maxWithdraw' + i).value);
+                if (isNaN(dailyLimit) || isNaN(totalTasks) || isNaN(minBalance) || isNaN(maxWithdraw)) { 
+                    alert('Invalid settings for Level ' + i); 
+                    return; 
+                }
+                settings.push({ 
+                    level: i, 
+                    daily_task_limit: dailyLimit, 
+                    total_tasks_required: totalTasks, 
+                    min_withdrawal_balance: minBalance, 
+                    max_withdrawal_amount: maxWithdraw 
+                });
+            }
+            try { 
+                await adminAPI.updateLevelSettings(settings); 
+                alert('Settings updated!'); 
+                await loadLevelSettings(); 
+                render(); 
+            } catch (error) { 
+                alert('Update failed: ' + error.message); 
+            }
+        }
+
+        async function triggerManualAssignment() {
+            if (!confirm('Assign products to all users now?')) return;
+            try { 
+                await adminAPI.triggerAssignment(); 
+                alert('Products assigned!'); 
+            } catch (error) { 
+                alert('Assignment failed: ' + error.message); 
+            }
+        }
+
+        function renderSidebar() {
+            return `
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <h1>Orion Music</h1>
+                        <p>Admin Dashboard</p>
+                    </div>
+                    <ul class="sidebar-menu">
+                        <li>
+                            <button class="${adminState.currentPage === 'overview' ? 'active' : ''}" onclick="navigateTo('overview')">
+                                <span>📊</span> Overview
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'users' ? 'active' : ''}" onclick="navigateTo('users')">
+                                <span>👥</span> User Management
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'products' ? 'active' : ''}" onclick="navigateTo('products')">
+                                <span>📦</span> Product Management
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'withdrawals' ? 'active' : ''}" onclick="navigateTo('withdrawals')" style="position: relative;">
+                                <span>💰</span> Withdrawals
+                                ${(() => {
+                                    const pendingCount = (adminState.stats?.pendingWithdrawals && typeof adminState.stats.pendingWithdrawals === 'object') 
+                                        ? (adminState.stats.pendingWithdrawals.count || 0) 
+                                        : (adminState.stats?.pendingWithdrawals || 0);
+                                    return pendingCount > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">${pendingCount}</span>` : '';
+                                })()}
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'commissionRates' ? 'active' : ''}" onclick="navigateTo('commissionRates')">
+                                <span>📈</span> Commission Rates
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'levelSettings' ? 'active' : ''}" onclick="navigateTo('levelSettings')">
+                                <span>⚙️</span> Level Settings
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'notifications' ? 'active' : ''}" onclick="navigateTo('notifications')" style="position: relative;">
+                                <span>🔔</span> Notifications
+                                ${adminState.clickedVouchers.length > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">${adminState.clickedVouchers.length}</span>` : ''}
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'chat' ? 'active' : ''}" onclick="navigateTo('chat')" style="position: relative;">
+                                <span>💬</span> Live Chat
+                                ${adminState.chatUnreadCount > 0 ? `<span style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">${adminState.chatUnreadCount}</span>` : ''}
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'events' ? 'active' : ''}" onclick="navigateTo('events')">
+                                <span>🎉</span> Events
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="sidebar-footer">
+                        <button class="btn btn-secondary btn-small" onclick="openModal('changePassword')" style="margin-bottom: 8px; width: 100%;">🔐 Change Password</button>
+                        <button class="btn btn-danger btn-small" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOverview() {
+            const { totalUsers, activeUsers, totalBalance, totalProducts, pendingWithdrawals, totalCommission } = adminState.stats;
+            const pendingWithdrawCount = (pendingWithdrawals && typeof pendingWithdrawals === 'object') ? (pendingWithdrawals.count || 0) : (pendingWithdrawals || 0);
+            return `
+                <div class="content-header">
+                    <h2>Dashboard Overview</h2>
+                    <p>Platform statistics</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon purple">👥</div>
+                            <div>
+                                <div class="stat-value">${totalUsers || 0}</div>
+                                <div class="stat-label">Total Users</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon green">✓</div>
+                            <div>
+                                <div class="stat-value">${activeUsers || 0}</div>
+                                <div class="stat-label">Active Users</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon blue">💵</div>
+                            <div>
+                                <div class="stat-value">$${(totalBalance || 0).toFixed(2)}</div>
+                                <div class="stat-label">Total Balance</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon orange">📦</div>
+                            <div>
+                                <div class="stat-value">${totalProducts || 0}</div>
+                                <div class="stat-label">Total Products</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon purple">⏳</div>
+                            <div>
+                                <div class="stat-value">${pendingWithdrawCount}</div>
+                                <div class="stat-label">Pending Withdrawals</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon green">💰</div>
+                            <div>
+                                <div class="stat-value">$${(totalCommission || 0).toFixed(2)}</div>
+                                <div class="stat-label">Total Commission</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-secondary" onclick="triggerManualAssignment()">🔄 Trigger Manual Product Assignment</button>
+                </div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Recent Users</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Level</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminState.users.slice(0, 10).map(user => `
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">${user.username[0].toUpperCase()}</div>
+                                            <div class="user-details">
+                                                <h4>${user.username}</h4>
+                                                <p>${user.email}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge level${user.level}">Level ${user.level}</span></td>
+                                    <td>$${user.wallet_balance.toFixed(2)}</td>
+                                    <td><span class="status-badge ${user.status}">${user.status}</span></td>
+                                    <td>
+                                        <button class="action-btn primary" data-action="manage-user" data-user-id="${user.id}">Manage</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ${adminState.clickedVouchers.length > 0 ? `
+                <div class="table-container" style="margin-top: 24px;">
+                    <div class="table-header">
+                        <h3>🎉 Recent Voucher Clicks</h3>
+                        <p style="font-size: 14px; color: #6b7280; margin-top: 4px;">Users who clicked on vouchers</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Voucher Title</th>
+                                <th>Clicked At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminState.clickedVouchers.slice(0, 10).map(click => {
+                                const formattedDate = formatDateSafe(click.clicked_at);
+                                return `
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">${(click.username || 'U')[0].toUpperCase()}</div>
+                                            <div class="user-details">
+                                                <h4>${click.username || 'Unknown'}</h4>
+                                                <p>${click.email || ''}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>${click.title || 'Voucher'}</td>
+                                    <td>${formattedDate}</td>
+                                    <td>
+                                        <button class="action-btn primary" onclick='openModal("viewUser", {id: ${click.user_id}, username: "${click.username || ''}", email: "${click.email || ''}"})'>View User</button>
+                                    </td>
+                                </tr>
+                            `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function renderUsers() {
+            return `
+                <div class="content-header">
+                    <h2>User Management</h2>
+                    <p>Manage all user accounts</p>
+                </div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>All Users (${adminState.users.length})</h3>
+                        <div class="search-box">
+                            <input type="text" placeholder="Search users..." oninput="searchUsers(this.value)" value="${adminState.searchQuery}">
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Level</th>
+                                <th>Balance</th>
+                                <th>Commission</th>
+                                <th>Tasks</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminState.users.map(user => {
+                                const isActive = user.last_seen && (new Date() - new Date(user.last_seen)) < 5 * 60 * 1000;
+                                // Get level settings for this user
+                                const levelSetting = adminState.levelSettings.find(l => l.level === user.level) || {};
+                                const perSet = Number(levelSetting.daily_task_limit) ? Math.floor(Number(levelSetting.daily_task_limit) / 2) : 0;
+                                const totalLimit = Number(levelSetting.daily_task_limit) || 0;
+                                // Calculate set progress and total today
+                                let setProgress = '';
+                                let totalToday = user.tasks_completed_today || 0;
+                                if (user.current_set === 2) {
+                                    setProgress = `${Math.max(0, totalToday - perSet)}/${perSet}`;
+                                } else {
+                                    setProgress = `${Math.min(totalToday, perSet)}/${perSet}`;
+                                }
+                                // Cap total today at totalLimit
+                                totalToday = Math.min(totalToday, totalLimit);
+                                // Block further submissions if finished all tasks
+                                const canSubmit = user.current_set < 2 || (user.current_set === 2 && (totalToday - perSet) < perSet);
+                                return `
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">
+                                                ${user.username[0].toUpperCase()}
+                                                ${isActive ? '<span class="active-indicator"></span>' : ''}
+                                            </div>
+                                            <div class="user-details">
+                                                <h4>${user.username}</h4>
+                                                <p>${user.email}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge level${user.level}">Level ${user.level}</span></td>
+                                    <td>${user.wallet_balance.toFixed(2)}</td>
+                                    <td>${user.commission_earned.toFixed(2)}</td>
+                                    <td>
+                                        Set Progress: <b>${setProgress}</b><br>
+                                        Total Today: <b>${totalToday}/${totalLimit}</b><br>
+                                        <span style="color:${canSubmit ? '#16a34a' : '#dc2626'};font-weight:600;">${canSubmit ? 'Can Submit' : 'Blocked'}</span>
+                                    </td>
+                                    <td><span class="status-badge ${user.status}">${user.status}</span></td>
+                                    <td>
+                                        <button class="action-btn primary" data-action="manage-user" data-user-id="${user.id}" ${canSubmit ? '' : 'disabled'}>Manage</button>
+                                    </td>
+                                </tr>
+                            `}).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderProducts() {
+            const API_URL = window.RANKSCIENCE_API_BASE_URL;
+            return `
+                <div class="content-header">
+                    <h2>Product Management</h2>
+                    <p>Manage platform products and global voucher popups</p>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" data-action="open-modal" data-modal-type="uploadProduct">📦 Upload New Product</button>
+                    <button class="btn btn-secondary" data-action="open-modal" data-modal-type="uploadVoucher">🖼️ Upload Voucher</button>
+                    <button class="btn btn-secondary" onclick="assignSelectedProducts()" ${adminState.selectedProducts.length === 0 ? 'disabled' : ''}>🎯 Assign Selected to All Users</button>
+                    <span style="color: #6b7280; font-size: 14px;">Selected: ${adminState.selectedProducts.length}</span>
+                </div>
+                
+                <!-- Global Voucher Popup Section -->
+                <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 16px; padding: 24px; margin-bottom: 32px; border: 2px solid #f59e0b;">
+                    <h3 style="color: #92400e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        🌍 Send Global Voucher Popup to ALL Users
+                    </h3>
+                    <p style="color: #a16207; font-size: 14px; margin-bottom: 16px;">
+                        Create a voucher popup that will be shown to ALL users when they login. Each user will only see it once.
+                    </p>
+                    ${adminState.vouchers.length === 0 ? `
+                        <p style="color: #9a3412; font-weight: 600;">⚠️ No vouchers uploaded yet. Upload a voucher first using the button above.</p>
+                    ` : `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="color: #92400e;">Select Voucher</label>
+                                <select id="globalVoucherSelect" style="width: 100%;">
+                                    <option value="">-- Select Voucher --</option>
+                                    ${adminState.vouchers.map(v => `<option value="${v.id}">${v.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="color: #92400e;">Expires In (days, optional)</label>
+                                <input type="number" id="globalPopupExpires" min="1" placeholder="e.g. 7">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="color: #92400e;">Custom Title (optional, overrides voucher title)</label>
+                            <input type="text" id="globalPopupTitle" placeholder="Enter custom title">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="color: #92400e;">Custom Message (optional, overrides voucher description)</label>
+                            <textarea id="globalPopupMessage" rows="2" placeholder="Enter custom message" style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px;"></textarea>
+                        </div>
+                        <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="sendGlobalVoucherPopup()">
+                            🚀 Send to ALL Users
+                        </button>
+                    `}
+                    
+                    ${adminState.globalPopups.length > 0 ? `
+                        <div style="margin-top: 24px; border-top: 2px solid #f59e0b; padding-top: 16px;">
+                            <h4 style="color: #92400e; margin-bottom: 12px;">Active Global Popups</h4>
+                            <div style="display: grid; gap: 12px;">
+                                ${adminState.globalPopups.map(popup => `
+                                    <div style="background: white; padding: 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px; border: 1px solid #e5e7eb;">
+                                        ${popup.image_path ? `
+                                            <img src="${API_URL}${popup.image_path}" alt="Voucher" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                        ` : `<div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;">📢</div>`}
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600; color: #1f2937;">${popup.title}</div>
+                                            <div style="font-size: 12px; color: #6b7280;">
+                                                Created: ${formatDateSafe(popup.created_at)}
+                                                ${popup.expires_at ? ` | Expires: ${formatDateSafe(popup.expires_at)}` : ' | No expiry'}
+                                            </div>
+                                            <span class="status-badge ${popup.is_active ? 'active' : 'inactive'}">${popup.is_active ? 'Active' : 'Inactive'}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button class="action-btn ${popup.is_active ? '' : 'primary'}" onclick="toggleGlobalPopup(${popup.id})">
+                                                ${popup.is_active ? 'Deactivate' : 'Activate'}
+                                            </button>
+                                            <button class="action-btn" style="background: #ef4444; color: white;" onclick="deleteGlobalPopup(${popup.id})">Delete</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="table-container">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">${adminState.products.map(product => `
+                            <div class="product-card">
+                                <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                                    <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280;">
+                                        <input type="checkbox" ${adminState.selectedProducts.includes(product.id) ? 'checked' : ''} onchange="toggleProductSelection(${product.id}, this.checked)">
+                                        Select
+                                    </label>
+                                </div>
+                                <div style="text-align: center; margin-bottom: 16px;">
+                                    <img src="${API_URL}${product.image_path || ''}" alt="${escapeHtml(product.name || 'Product')}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; margin-bottom: 12px;" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><rect fill=%22%23e5e7eb%22 width=%22120%22 height=%22120%22/><text x=%2260%22 y=%2265%22 text-anchor=%22middle%22 fill=%22%236b7280%22 font-size=%2240%22>📦</text></svg>'">
+                                    <h4 style="font-size: 18px; color: #1f2937; margin-bottom: 8px;">${escapeHtml(product.name || 'Unnamed Product')}</h4>
+                                    <span class="status-badge ${product.status || 'active'}">${product.status || 'active'}</span>
+                                </div>
+                                <div style="background: #f9fafb; padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                                    <h5 style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">Level Pricing</h5>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        ${[1,2,3,4,5].map(level => `
+                                            <div style="text-align: center;">
+                                                <div style="font-size: 12px; color: #6b7280;">Level ${level}</div>
+                                                <div style="font-weight: 600; color: #7c3aed;">${(Number(product['level' + level + '_price']) || 0).toFixed(2)}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="action-btn primary" style="flex: 1;" onclick="openModal('editProduct', adminState.products.find(p => p.id === ${product.id}))">Edit</button>
+                                    <button class="action-btn" style="flex: 1;" onclick="toggleProductStatus(${product.id})">
+                                        ${product.status === 'active' ? 'Deactivate' : 'Activate'}
+                                    </button>
+                                    <button class="action-btn" style="flex: 1; background: #ef4444; color: white;" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" onclick="deleteProduct(this.dataset.productId, this.dataset.productName)">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWithdrawals() {
+            const pendingCount = adminState.withdrawals.filter(w => w.status === 'pending').length;
+            
+            return `
+                <div class="content-header">
+                    <h2>Withdrawal Requests</h2>
+                    <p>Review and process withdrawals</p>
+                    ${pendingCount > 0 ? `<span class="badge-notification">${pendingCount} pending</span>` : ''}
+                </div>
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>All Withdrawals (${adminState.withdrawals.length})</h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-small ${adminState.withdrawalFilter === 'all' ? 'btn-secondary' : ''}" onclick="filterWithdrawals('all')">All</button>
+                            <button class="btn btn-small ${adminState.withdrawalFilter === 'pending' ? 'btn-secondary' : ''}" onclick="filterWithdrawals('pending')">Pending</button>
+                            <button class="btn btn-small ${adminState.withdrawalFilter === 'approved' ? 'btn-secondary' : ''}" onclick="filterWithdrawals('approved')">Approved</button>
+                            <button class="btn btn-small ${adminState.withdrawalFilter === 'rejected' ? 'btn-secondary' : ''}" onclick="filterWithdrawals('rejected')">Rejected</button>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Amount (USD)</th>
+                                <th>Crypto Type</th>
+                                <th>Wallet Address</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${adminState.withdrawals
+                                .filter(w => !adminState.withdrawalFilter || adminState.withdrawalFilter === 'all' || w.status === adminState.withdrawalFilter)
+                                .map(withdrawal => `
+                                <tr>
+                                    <td><strong>#${withdrawal.id}</strong></td>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">${(withdrawal.username || 'U')[0].toUpperCase()}</div>
+                                            <div class="user-details">
+                                                <h4>${withdrawal.username || 'Unknown'}</h4>
+                                                <p>Balance: $${(withdrawal.user_balance?.toFixed(2) || '0.00')}</p>
+                                                ${withdrawal.user_withdraw_type ? `<p style="font-size: 10px; color: #6b7280;">Saved: ${withdrawal.user_withdraw_type}</p>` : ''}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="font-weight: 600; color: #f97316; font-size: 16px;">$${parseFloat(withdrawal.amount).toFixed(2)}</td>
+                                    <td>
+                                        <span style="background: #e0e7ff; color: #4f46e5; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+                                            ${withdrawal.withdraw_type || withdrawal.user_withdraw_type || 'N/A'}
+                                        </span>
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 11px; max-width: 180px; overflow: hidden; text-overflow: ellipsis;" title="${withdrawal.wallet_address}${withdrawal.user_saved_wallet ? ' | Saved: ' + withdrawal.user_saved_wallet : ''}">
+                                        ${withdrawal.wallet_address}
+                                        ${withdrawal.user_saved_wallet && withdrawal.user_saved_wallet !== withdrawal.wallet_address ? `<br><span style="color: #6b7280; font-size: 10px;">Saved: ${withdrawal.user_saved_wallet.substring(0, 15)}...</span>` : ''}
+                                    </td>
+                                    <td style="font-size: 13px;">${formatDateSafe(withdrawal.created_at)}</td>
+                                    <td><span class="status-badge ${withdrawal.status}">${withdrawal.status.toUpperCase()}</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            ${withdrawal.status === 'pending' ? `
+                                                <button class="action-btn btn-secondary btn-small" onclick="approveWithdrawal(${withdrawal.id})">✓ Approve</button>
+                                                <button class="action-btn btn-danger btn-small" onclick="rejectWithdrawal(${withdrawal.id})">✗ Reject</button>
+                                            ` : withdrawal.status === 'approved' ? `
+                                                <button class="action-btn btn-small" onclick="setPendingWithdrawal(${withdrawal.id})">↺ Pending</button>
+                                                <button class="action-btn btn-danger btn-small" onclick="rejectWithdrawal(${withdrawal.id})">✗ Reject</button>
+                                            ` : withdrawal.status === 'rejected' ? `
+                                                <button class="action-btn btn-secondary btn-small" onclick="approveWithdrawal(${withdrawal.id})">✓ Approve</button>
+                                                <button class="action-btn btn-small" onclick="setPendingWithdrawal(${withdrawal.id})">↺ Pending</button>
+                                            ` : '<span style="color: #6b7280;">N/A</span>'}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                            ${adminState.withdrawals.filter(w => !adminState.withdrawalFilter || adminState.withdrawalFilter === 'all' || w.status === adminState.withdrawalFilter).length === 0 ? `
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
+                                        No withdrawal requests found
+                                    </td>
+                                </tr>
+                            ` : ''}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderCommissionRates() {
+            return `
+                <div class="content-header">
+                    <h2>Commission Rates</h2>
+                    <p>Configure commission percentages</p>
+                </div>
+                <div class="table-container">
+                    <div class="commission-rates-grid">
+                        ${adminState.commissionRates.map(rate => `
+                            <div class="commission-rate-card">
+                                <div class="commission-level">Level ${rate.level}</div>
+                                <div style="margin-bottom: 12px;">
+                                    <input type="number" id="commissionRate${rate.level}" class="commission-input" value="${(rate.rate * 100).toFixed(1)}" min="0" max="100" step="0.1">
+                                </div>
+                                <div style="font-size: 14px; color: #6b7280;">Percentage (%)</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="text-align: center; margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="updateCommissionRates()">💰 Update Commission Rates</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLevelSettings() {
+            const API_URL = window.RANKSCIENCE_API_BASE_URL;
+            return `
+                <div class="content-header">
+                    <h2>Level Settings</h2>
+                    <p>Configure tasks, withdrawal limits, and level icons</p>
+                </div>
+
+                <!-- Level Icons Section -->
+                <div class="table-container" style="margin-bottom: 24px;">
+                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 20px; color: #f97316;">🏅 Level Icons</h3>
+                        <p style="color: #6b7280; margin-bottom: 20px; font-size: 14px;">Upload coin/badge icons for each level. These are displayed next to usernames to show their premium status.</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            ${[1, 2, 3, 4, 5].map(level => {
+                                const iconInfo = adminState.levelIcons.find(i => i.level === level) || { exists: false };
+                                const levelColors = {
+                                    1: '#808080', // Grey
+                                    2: '#c0c0c0', // Silver
+                                    3: '#b08d57', // Bronze
+                                    4: '#10b981', // Emerald
+                                    5: '#ffd700'  // Gold
+                                };
+                                return `
+                                    <div style="background: linear-gradient(135deg, ${levelColors[level]}22, ${levelColors[level]}11); border: 2px solid ${levelColors[level]}; border-radius: 12px; padding: 16px; text-align: center;">
+                                        <div style="font-weight: bold; color: ${levelColors[level]}; margin-bottom: 12px; font-size: 16px;">Level ${level}</div>
+                                        <div style="width: 80px; height: 80px; margin: 0 auto 12px; background: #f3f4f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                            ${iconInfo.exists 
+                                                ? `<img src="${API_URL}/api/level-icons/${level}?t=${Date.now()}" alt="Level ${level}" style="width: 100%; height: 100%; object-fit: contain;">`
+                                                : `<span style="font-size: 32px; opacity: 0.3;">🏅</span>`
+                                            }
+                                        </div>
+                                        <input type="file" id="levelIconInput${level}" accept="image/*" style="display: none;" onchange="uploadLevelIcon(${level})">
+                                        <button class="btn" style="width: 100%; margin-bottom: 8px; background: ${levelColors[level]}; font-size: 12px; padding: 8px;" onclick="document.getElementById('levelIconInput${level}').click()">
+                                            ${iconInfo.exists ? '🔄 Replace' : '📤 Upload'}
+                                        </button>
+                                        ${iconInfo.exists ? `
+                                            <button class="btn" style="width: 100%; background: #ef4444; font-size: 12px; padding: 8px;" onclick="deleteLevelIcon(${level})">
+                                                🗑️ Delete
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level Settings Section -->
+                <div class="table-container">
+                    ${adminState.levelSettings.map(setting => `
+                        <div style="background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <h3 style="margin-bottom: 20px; color: #7c3aed;">Level ${setting.level} Settings</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="form-group">
+                                    <label>Daily Task Limit</label>
+                                    <input type="number" id="dailyLimit${setting.level}" value="${setting.daily_task_limit}" min="1" max="10">
+                                </div>
+                                <div class="form-group">
+                                    <label>Total Tasks Required</label>
+                                    <input type="number" id="totalTasks${setting.level}" value="${setting.total_tasks_required}" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Min Withdrawal Balance ($)</label>
+                                    <input type="number" id="minBalance${setting.level}" value="${setting.min_withdrawal_balance}" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Withdrawal Amount ($)</label>
+                                    <input type="number" id="maxWithdraw${setting.level}" value="${setting.max_withdrawal_amount}" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div style="text-align: center; margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="updateLevelSettings()">⚙️ Update Level Settings</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderModal() {
+            if (!adminState.modalOpen) return '';
+            const item = adminState.selectedItem;
+            const API_URL = window.RANKSCIENCE_API_BASE_URL;
+
+            if (adminState.modalType === 'viewUser') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                                <div style="background: #f9fafb; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 12px;">User Information</h4>
+                                    <div class="info-row">
+                                        <span class="info-label">User ID</span>
+                                        <span class="info-value">#${item.id}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Email</span>
+                                        <span class="info-value">${item.email}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Level</span>
+                                        <span class="info-value">Level ${item.level}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Tasks Completed</span>
+                                        <span class="info-value">${item.tasks_completed_at_level}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Status</span>
+                                        <span class="status-badge ${item.status}">${item.status}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Payment Name</span>
+                                        <span class="info-value">${item.payment_name || '-'}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Crypto Wallet</span>
+                                        <span class="info-value">${item.crypto_wallet || '-'}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Wallet Address</span>
+                                        <span class="info-value" style="font-family: monospace;">${item.wallet_address || '-'}</span>
+                                    </div>
+                                </div>
+                                <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 12px;">Manual Product Assignment</h4>
+                                    ${adminState.products.length === 0 ? `
+                                        <p style="color: #6b7280; font-size: 14px;">No active products available.</p>
+                                    ` : `
+                                        <div class="form-group">
+                                            <label>Select Product</label>
+                                            <select id="manualProductSelect_${item.id}" onchange="updateManualAssignmentPrice(${item.id}, 'manualProductSelect_${item.id}', 'manualCustomPrice_${item.id}')">
+                                                ${adminState.products.map(p => `<option value="${p.id}" data-level1="${p.level1_price}" data-level2="${p.level2_price}" data-level3="${p.level3_price}" data-level4="${p.level4_price}" data-level5="${p.level5_price}">${p.name}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Custom Price (optional - leave empty to use level-based price)</label>
+                                            <input type="number" step="0.01" id="manualCustomPrice_${item.id}" placeholder="Leave empty for level price">
+                                            <small id="manualPriceDisplay_${item.id}" style="color: #6b7280; font-size: 12px; display: block; margin-top: 4px;">Current level price: ${(() => {
+                                                const firstProduct = adminState.products[0];
+                                                if (firstProduct && item.level) {
+                                                    return (firstProduct['level' + item.level + '_price'] || 0).toFixed(2);
+                                                }
+                                                return '0.00';
+                                            })()}</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Extra Bonus (optional)</label>
+                                            <input type="number" step="0.01" id="manualBonus_${item.id}" placeholder="0.00">
+                                        </div>
+                                        <button class="btn btn-secondary" onclick="handleManualAssignProduct(${item.id}, 'manualProductSelect_${item.id}', 'manualBonus_${item.id}', 'manualCustomPrice_${item.id}')">Assign Product</button>
+                                    `}
+                                </div>
+                                <div style="background: #fff7ed; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 12px;">Send Image Voucher</h4>
+                                    ${adminState.vouchers.length === 0 ? `
+                                        <p style="color:#9a3412; font-size: 14px;">No vouchers yet. Use Upload Voucher in Products to add one.</p>
+                                    ` : `
+                                        <div class="form-group">
+                                            <label>Select Voucher</label>
+                                            <select id="voucherSelect_${item.id}">
+                                                ${adminState.vouchers.map(v => `<option value="${v.id}">${v.name}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <button class="btn btn-secondary" onclick="sendVoucherToUser(${item.id})">Send Voucher Popup</button>
+                                    `}
+                                </div>
+                                <div style="background: #eff6ff; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 12px;">📢 Send Notification</h4>
+                                    <div class="form-group">
+                                        <label>Title</label>
+                                        <input type="text" id="notifyTitle_${item.id}" placeholder="Notification title">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Message</label>
+                                        <textarea id="notifyMessage_${item.id}" placeholder="Enter notification message" rows="3" style="width: 100%; padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; resize: vertical;"></textarea>
+                                    </div>
+                                    <button class="btn btn-secondary" onclick="sendNotificationToUser(${item.id})">Send Notification</button>
+                                </div>
+                                <div style="background: #fef3c7; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 12px;">🔄 Task Management</h4>
+                                    <p style="font-size: 13px; color: #92400e; margin-bottom: 12px;">
+                                        ${(() => {
+                                            const level = item.level || 1;
+                                            // Match backend limits: {1: {total: 80, perSet: 40}, 2: {total: 90, perSet: 45}, 3: {total: 100, perSet: 50}, 4: {total: 110, perSet: 55}, 5: {total: 120, perSet: 60}}
+                                            const limits = {1: {total: 80, perSet: 40}, 2: {total: 90, perSet: 45}, 3: {total: 100, perSet: 50}, 4: {total: 110, perSet: 55}, 5: {total: 120, perSet: 60}};
+                                            const taskLimits = limits[level] || limits[1];
+                                            const currentSet = item.current_set || 1;
+                                            const tasksToday = item.tasks_completed_today || 0;
+                                            // tasks_completed_today represents tasks in the CURRENT set
+                                            // When in Set 1: tasks_completed_today = Set 1 progress
+                                            // When in Set 2: tasks_completed_today = Set 2 progress (was reset to 0 when moved to Set 2)
+                                            const tasksInSet = tasksToday;
+                                            // Total today = Set 1 tasks (if completed) + current set progress
+                                            const totalToday = currentSet === 2 ? taskLimits.perSet + tasksToday : tasksToday;
+                                            return `<strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #ea580c;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}) | Total Today: ${totalToday}/${taskLimits.total}`;
+                                        })()}
+                                    </p>
+                                    <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%;" onclick="resetUserTasks(${item.id})">
+                                        🔄 Reset Tasks (Allow Set 2)
+                                    </button>
+                                    <p style="font-size: 11px; color: #92400e; margin-top: 8px;">
+                                        Use this when user completes Set 1 and needs to continue to Set 2.
+                                    </p>
+                                </div>
+                                <div style="background: #fce7f3; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                                    <h4 style="margin-bottom: 12px;">⚡ Automatic Negative Balance Trigger</h4>
+                                    <p style="font-size: 12px; color: #9d174d; margin-bottom: 12px;">
+                                        Set a trigger to automatically apply a negative balance when user reaches a specific submission in a set.
+                                        ${item.negative_balance_set ? `
+                                            <br><strong style="color: #be185d;">Current trigger:</strong> -$${(item.negative_balance_amount || 0).toFixed(2)} on Set ${item.negative_balance_set}, Submission ${item.negative_balance_submission}
+                                            ${item.negative_balance_triggered ? '<span style="color: #16a34a;"> ✓ (Already triggered)</span>' : '<span style="color: #ca8a04;"> ⏳ (Pending)</span>'}
+                                        ` : '<br><em>No trigger set.</em>'}
+                                    </p>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px;">Set Number</label>
+                                            <input type="number" id="negBalSet_${item.id}" min="1" max="2" placeholder="1 or 2" value="${item.negative_balance_set || ''}">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px;">Submission #</label>
+                                            <input type="number" id="negBalSubmission_${item.id}" min="1" placeholder="e.g. 5" value="${item.negative_balance_submission || ''}">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px;">Amount ($)</label>
+                                            <input type="number" id="negBalAmount_${item.id}" step="0.01" min="0" placeholder="e.g. 50" value="${item.negative_balance_amount || ''}">
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-secondary" style="flex: 1;" onclick="setNegativeBalanceTrigger(${item.id})">
+                                            Set Trigger
+                                        </button>
+                                        <button class="btn" style="flex: 1; background: #6b7280;" onclick="clearNegativeBalanceTrigger(${item.id})">
+                                            Clear Trigger
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <button class="btn" onclick='openModal("editBalance", ${JSON.stringify(item)})'>💰 Edit Balance</button>
+                                    <button class="btn" onclick='openModal("editCommission", ${JSON.stringify(item)})'>💵 Edit Commission</button>
+                                    <button class="btn" onclick='openModal("editLevel", ${JSON.stringify(item)})'>⭐ Change Level</button>
+                                    <button class="btn btn-danger" onclick='openModal("resetPassword", ${JSON.stringify(item)})'>🔐 Reset Password</button>
+                                    <button class="btn" style="background: #7c3aed; grid-column: span 2;" onclick='openModal("withdrawOTP", ${JSON.stringify(item)})'>🔑 Generate Withdraw Password OTP</button>
+                                </div>
+                                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 12px; margin-top: 20px;">
+                                    <h4 style="color: #dc2626; margin-bottom: 12px;">⚠️ Danger Zone</h4>
+                                    <p style="font-size: 13px; color: #991b1b; margin-bottom: 12px;">
+                                        Permanently delete this user account and all associated data. This action cannot be undone.
+                                    </p>
+                                    <button class="btn" style="background: #dc2626; color: white; width: 100%;" onclick="deleteUserAccount(${item.id}, '${item.username.replace(/'/g, "\\'")}')">
+                                        🗑️ Delete User Account
+                                    </button>
+                                </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn" style="background: #6b7280;" onclick="closeModal()">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'editBalance') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Edit Balance</h3>
+                                <p>Update wallet balance for ${item.username}</p>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert warning">⚠️ Current Balance: ${item.wallet_balance.toFixed(2)}</div>
+                                <div class="form-group">
+                                    <label>New Balance (USD)</label>
+                                    <input type="number" id="newBalance" step="0.01" value="${item.wallet_balance.toFixed(2)}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                <button class="btn btn-secondary" onclick="updateUserBalance()">Update Balance</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'editCommission') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Edit Commission</h3>
+                                <p>Update commission for ${item.username}</p>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert warning">⚠️ Current Commission: ${item.commission_earned.toFixed(2)}</div>
+                                <div class="form-group">
+                                    <label>New Commission (USD)</label>
+                                    <input type="number" id="newCommission" step="0.01" value="${item.commission_earned.toFixed(2)}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                <button class="btn btn-secondary" onclick="updateUserCommission()">Update Commission</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'editLevel') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Change User Level</h3>
+                                <p>Update level for ${item.username}</p>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert warning">⚠️ Current Level: Level ${item.level}</div>
+                                <div class="form-group">
+                                    <label>Select New Level</label>
+                                    <select id="newLevel">
+                                        ${[1,2,3,4,5].map(level => `
+                                            <option value="${level}" ${item.level === level ? 'selected' : ''}>Level ${level}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                <button class="btn btn-secondary" onclick="updateUserLevel()">Update Level</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'resetPassword') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Reset Password</h3>
+                                <p>Set new password for ${item.username}</p>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert error">⚠️ This will immediately change the user's password</div>
+                                <div class="form-group">
+                                    <label>New Password</label>
+                                    <input type="text" id="newPassword" minlength="6" placeholder="Enter new password">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                <button class="btn btn-danger" onclick="resetUserPassword()">Reset Password</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'withdrawOTP') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Generate Withdraw Password OTP</h3>
+                                <p>Generate OTP for ${item.username} to reset their withdraw password</p>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert" style="background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;">
+                                    ℹ️ This will generate a one-time password that the user can use to reset their withdraw password. The OTP expires in 15 minutes.
+                                </div>
+                                <div id="withdrawOTPDisplay" style="display: none; margin-top: 16px; padding: 20px; background: #ecfdf5; border: 2px solid #10b981; border-radius: 12px; text-align: center;">
+                                    <div style="font-size: 14px; color: #065f46; margin-bottom: 8px;">Generated OTP:</div>
+                                    <div id="withdrawOTPCode" style="font-size: 32px; font-weight: bold; color: #059669; letter-spacing: 4px; font-family: monospace;"></div>
+                                    <div style="font-size: 12px; color: #065f46; margin-top: 8px;">Expires in 15 minutes</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn" style="background: #6b7280;" onclick="closeModal()">Close</button>
+                                <button class="btn btn-primary" onclick="generateWithdrawOTP()">Generate OTP</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'uploadProduct') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Upload New Product</h3>
+                                <p>Add a new product with level-based pricing</p>
+                            </div>
+                            <form id="productForm" onsubmit="uploadProduct(event)">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Product Name</label>
+                                        <input type="text" name="name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Product Image</label>
+                                        <input type="file" name="image" accept="image/*" required>
+                                    </div>
+                                    <div style="background: #f9fafb; padding: 16px; border-radius: 12px;">
+                                        <h4 style="margin-bottom: 12px;">Level-Based Pricing</h4>
+                                        ${[1,2,3,4,5].map(level => `
+                                            <div class="form-group">
+                                                <label>Level ${level} Price (USD)</label>
+                                                <input type="number" name="level${level}Price" step="0.01" required>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div style="background: #e8f5e9; padding: 16px; border-radius: 12px; margin-top: 16px;">
+                                        <h4 style="margin-bottom: 12px; color: #2e7d32;">💰 Level-Based Commission</h4>
+                                        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Set the fixed commission amount earned per product for each level</p>
+                                        ${[1,2,3,4,5].map(level => `
+                                            <div class="form-group">
+                                                <label>Level ${level} Commission (USD)</label>
+                                                <input type="number" name="level${level}Commission" step="0.01" value="0" required>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-secondary">Upload Product</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'uploadVoucher') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Upload Voucher</h3>
+                                <p>Add an image-based voucher card</p>
+                            </div>
+                            <form id="voucherForm" onsubmit="uploadVoucher(event)">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Name</label>
+                                        <input type="text" name="name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Title (optional)</label>
+                                        <input type="text" name="title">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Description (optional)</label>
+                                        <textarea name="description" rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Voucher Image</label>
+                                        <input type="file" name="image" accept="image/*" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-secondary">Upload Voucher</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'editProduct') {
+                const safeItem = item || {};
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>Edit Product</h3>
+                                <p>Update product information</p>
+                            </div>
+                            <form id="productForm" onsubmit="updateProduct(event)">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Product Name</label>
+                                        <input type="text" name="name" value="${escapeHtml(safeItem.name || '')}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Product Image (leave empty to keep current)</label>
+                                        <input type="file" name="image" accept="image/*">
+                                        <div style="margin-top: 12px;">
+                                            <p style="font-size: 14px; color: #6b7280;">Current Image:</p>
+                                            <img src="${API_URL}${safeItem.image_path || ''}" alt="${escapeHtml(safeItem.name || 'Product')}" style="max-width: 150px; border-radius: 8px; margin-top: 8px;" onerror="this.style.display='none'">
+                                        </div>
+                                    </div>
+                                    <div style="background: #f9fafb; padding: 16px; border-radius: 12px;">
+                                        <h4 style="margin-bottom: 12px;">Level-Based Pricing</h4>
+                                        ${[1,2,3,4,5].map(level => `
+                                            <div class="form-group">
+                                                <label>Level ${level} Price (USD)</label>
+                                                <input type="number" name="level${level}Price" step="0.01" value="${Number(safeItem['level' + level + '_price']) || 0}" required>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-secondary">Update Product</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (adminState.modalType === 'changePassword') {
+                return `
+                    <div class="modal-overlay" onclick="closeModal()">
+                        <div class="modal" onclick="event.stopPropagation()">
+                            <div class="modal-header">
+                                <h3>🔐 Change Password</h3>
+                                <p>Update your admin password</p>
+                            </div>
+                            <form id="changePasswordForm" onsubmit="changePassword(event)">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Current Password</label>
+                                        <input type="password" id="currentPassword" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <input type="password" id="newPassword" required minlength="6" placeholder="Minimum 6 characters">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Confirm New Password</label>
+                                        <input type="password" id="confirmPassword" required minlength="6">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn" style="background: #6b7280;" onclick="closeModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-secondary">Change Password</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return '';
+        }
+
+        async function changePassword(e) {
+            e.preventDefault();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match!');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('New password must be at least 6 characters long!');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const API_URL = window.RANKSCIENCE_API_BASE_URL;
+                const resp = await fetch(`${API_URL}/api/admin/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to change password');
+                }
+                
+                alert('Password changed successfully!');
+                closeModal();
+            } catch (error) {
+                alert('Failed to change password: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        function renderNotifications() {
+            const API_URL = window.RANKSCIENCE_API_BASE_URL;
+            return `
+                <div class="content-header">
+                    <h2>🔔 Voucher Click Notifications</h2>
+                    <p>See when users click on vouchers you've sent</p>
+                    <button class="btn btn-secondary" onclick="refreshNotifications()" style="margin-top: 12px;">🔄 Refresh</button>
+                </div>
+                ${adminState.clickedVouchers.length === 0 ? `
+                    <div style="text-align: center; padding: 60px 20px; background: #f9fafb; border-radius: 12px; margin-top: 24px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔔</div>
+                        <h3 style="color: #6b7280; margin-bottom: 8px;">No Notifications Yet</h3>
+                        <p style="color: #9ca3af;">When users click on vouchers you've sent, you'll see notifications here.</p>
+                    </div>
+                ` : `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Voucher</th>
+                                    <th>Message</th>
+                                    <th>Clicked At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${adminState.clickedVouchers.map(click => {
+                                    const formattedDate = formatDateSafe(click.clicked_at);
+                                    const clickedDate = new Date(click.clicked_at);
+                                    const timeAgo = !isNaN(clickedDate.getTime()) ? getTimeAgo(clickedDate) : 'Unknown';
+                                    return `
+                                    <tr>
+                                        <td>
+                                            <div class="user-info">
+                                                <div class="user-avatar">${(click.username || 'U')[0].toUpperCase()}</div>
+                                                <div class="user-details">
+                                                    <h4>${click.username || 'Unknown'}</h4>
+                                                    <p>${click.email || ''}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                ${click.image_path ? `
+                                                    <img src="${API_URL}${click.image_path}" alt="Voucher" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb;">
+                                                ` : ''}
+                                                <div>
+                                                    <strong>${click.title || 'Voucher'}</strong>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                                                ${click.message || '-'}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div style="font-weight: 500;">${formattedDate}</div>
+                                                <div style="font-size: 12px; color: #6b7280;">${timeAgo}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="action-btn primary" onclick='openModal("viewUser", {id: ${click.user_id}, username: "${click.username || ''}", email: "${click.email || ''}"})'>View User</button>
+                                        </td>
+                                    </tr>
+                                `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+            `;
+        }
+
+        function formatDateSafe(dateValue) {
+            if (!dateValue) return 'N/A';
+            
+            try {
+                const date = new Date(dateValue);
+                if (isNaN(date.getTime())) {
+                    return 'Invalid Date';
+                }
+                return date.toLocaleString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+            if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            return 'Just now';
+        }
+
+        function renderChat() {
+            const formatTime = (dateString) => {
+                const date = new Date(dateString);
+                const now = new Date();
+                const isToday = date.toDateString() === now.toDateString();
+                
+                if (isToday) {
+                    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                } else {
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+                           date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                }
+            };
+
+            return `
+                <div class="content-header">
+                    <h2>💬 Live Chat Support</h2>
+                    <p>Manage customer support conversations</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 300px 1fr; gap: 24px; height: calc(100vh - 200px);">
+                    <!-- Users List -->
+                    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;">
+                        <div style="padding: 16px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                            <h3 style="margin: 0; font-size: 16px; color: #1f2937;">Conversations</h3>
+                        </div>
+                        <div style="flex: 1; overflow-y: auto;">
+                            ${adminState.chatUsers.length === 0 ? `
+                                <div style="padding: 40px 20px; text-align: center; color: #9ca3af;">
+                                    <div style="font-size: 36px; margin-bottom: 12px;">💬</div>
+                                    <div>No conversations yet</div>
+                                </div>
+                            ` : adminState.chatUsers.map(user => `
+                                <div 
+                                    class="chat-user-item ${adminState.selectedChatUserId === user.id ? 'active' : ''}"
+                                    onclick="loadChatMessages(${user.id})"
+                                    style="padding: 16px; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: background 0.2s; ${adminState.selectedChatUserId === user.id ? 'background: #fef3c7;' : ''}"
+                                    onmouseover="if(${adminState.selectedChatUserId !== user.id}) this.style.background='#f9fafb'"
+                                    onmouseout="if(${adminState.selectedChatUserId !== user.id}) this.style.background='white'"
+                                >
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 4px;">
+                                        <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #1f2937;">${user.username}</h4>
+                                        ${user.unread_count > 0 ? `
+                                            <span style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: bold;">${user.unread_count}</span>
+                                        ` : ''}
+                                    </div>
+                                    <div style="font-size: 12px; color: #6b7280;">${user.email || ''}</div>
+                                    <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">${formatTime(user.last_message_time)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;">
+                        ${!adminState.selectedChatUserId ? `
+                            <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+                                    <div>Select a conversation to start chatting</div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div style="padding: 16px; border-bottom: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; font-size: 16px; color: #1f2937;">
+                                    ${adminState.chatUsers.find(u => u.id === adminState.selectedChatUserId)?.username || 'User'}
+                                </h3>
+                                <button onclick="clearChatConversation(${adminState.selectedChatUserId})" class="btn btn-small" style="background: #ef4444; color: white; padding: 6px 12px; font-size: 12px;">
+                                    🗑️ Clear Chat
+                                </button>
+                            </div>
+                            <div style="flex: 1; padding: 16px; overflow-y: auto; background: #f9fafb;" id="adminChatMessages">
+                                ${adminState.chatMessages.map(msg => `
+                                    <div style="margin-bottom: 16px; display: flex; flex-direction: column; ${msg.sender_type === 'admin' ? 'align-items: flex-end;' : 'align-items: flex-start;'}">
+                                        <div style="max-width: 70%; padding: 10px 14px; border-radius: 12px; word-wrap: break-word; ${msg.sender_type === 'admin' ? 'background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;' : 'background: white; color: #1f2937; border: 1px solid #e5e7eb;'}">
+                                            ${msg.message}
+                                            ${msg.image_path ? `<img src="${window.RANKSCIENCE_API_BASE_URL.replace('/api', '')}/${msg.image_path}" style="max-width: 250px; border-radius: 8px; margin-top: 8px; cursor: pointer;" onclick="window.open('${window.RANKSCIENCE_API_BASE_URL.replace('/api', '')}/${msg.image_path}', '_blank')" />` : ''}
+                                        </div>
+                                        <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">
+                                            ${formatTime(msg.created_at)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="padding: 16px; border-top: 1px solid #e5e7eb; background: white;">
+                                ${adminState.chatImagePreview ? `
+                                    <div style="margin-bottom: 8px; position: relative; display: inline-block;">
+                                        <img src="${adminState.chatImagePreview}" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 2px solid #e5e7eb;" />
+                                        <div onclick="removeAdminChatImage()" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px;">✕</div>
+                                    </div>
+                                ` : ''}
+                                <div style="display: flex; gap: 8px;">
+                                    <input 
+                                        type="text" 
+                                        id="adminChatInput" 
+                                        placeholder="Type your message..."
+                                        style="flex: 1; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none;"
+                                        onkeypress="if(event.key === 'Enter') sendAdminChatMessage()"
+                                    />
+                                    <input type="file" id="adminChatImageInput" accept="image/*" style="display: none;" onchange="handleAdminChatImageSelect(event)" />
+                                    <button class="btn btn-secondary" onclick="document.getElementById('adminChatImageInput').click()" style="padding: 10px 14px;">📷</button>
+                                    <button class="btn btn-primary" onclick="sendAdminChatMessage()">Send</button>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Events Management Page
+        function renderEventsPage() {
+            const API_URL = window.RANKSCIENCE_API_BASE_URL;
+            return `
+                <div class="content-header">
+                    <h2>Events Management</h2>
+                    <p>Create and manage events visible to all users</p>
+                </div>
+                
+                <!-- Create New Event Form -->
+                <div class="admin-card" style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 16px; font-size: 18px; font-weight: bold;">Create New Event</h3>
+                    <form id="createEventForm" onsubmit="handleCreateEvent(event)" style="display: grid; gap: 16px;">
+                        <div class="form-group">
+                            <label>Event Title *</label>
+                            <input type="text" id="eventTitle" class="form-input" placeholder="Enter event title" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="eventDescription" class="form-input" rows="4" placeholder="Enter event description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Event Date</label>
+                            <input type="date" id="eventDate" class="form-input" />
+                        </div>
+                        <div class="form-group">
+                            <label>Event Image</label>
+                            <input type="file" id="eventImage" class="form-input" accept="image/*" />
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="eventActive" checked style="width: 18px; height: 18px;" />
+                                <span>Active (visible to users)</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Event</button>
+                    </form>
+                </div>
+
+                <!-- Existing Events List -->
+                <div class="admin-card">
+                    <h3 style="margin-bottom: 16px; font-size: 18px; font-weight: bold;">All Events (${adminState.events.length})</h3>
+                    ${adminState.events.length === 0 ? `
+                        <div style="text-align: center; padding: 40px; color: #6b7280;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+                            <p>No events created yet. Create your first event above!</p>
+                        </div>
+                    ` : `
+                        <div style="display: grid; gap: 16px;">
+                            ${adminState.events.map(event => `
+                                <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #fafafa;">
+                                    <div style="display: flex; gap: 16px; padding: 16px;">
+                                        ${event.image_path ? `
+                                            <div style="width: 120px; height: 90px; flex-shrink: 0; border-radius: 8px; overflow: hidden;">
+                                                <img src="${API_URL}${event.image_path}" alt="${event.title}" style="width: 100%; height: 100%; object-fit: cover;" />
+                                            </div>
+                                        ` : `
+                                            <div style="width: 120px; height: 90px; flex-shrink: 0; border-radius: 8px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 32px;">🎉</div>
+                                        `}
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                                <h4 style="font-size: 16px; font-weight: bold; color: #1f2937; margin: 0;">${event.title}</h4>
+                                                <span style="background: ${event.is_active ? '#10b981' : '#6b7280'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                                    ${event.is_active ? 'ACTIVE' : 'INACTIVE'}
+                                                </span>
+                                            </div>
+                                            <p style="color: #6b7280; font-size: 13px; margin-bottom: 8px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                                ${event.description || 'No description'}
+                                            </p>
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="color: #9ca3af; font-size: 12px;">
+                                                    ${event.event_date ? '📅 ' + formatDateSafe(event.event_date).split(',')[0] : 'No date set'}
+                                                </span>
+                                                <button onclick="deleteEvent(${event.id})" class="btn btn-danger btn-small">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function handleCreateEvent(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('title', document.getElementById('eventTitle').value);
+            formData.append('description', document.getElementById('eventDescription').value);
+            formData.append('event_date', document.getElementById('eventDate').value || '');
+            formData.append('is_active', document.getElementById('eventActive').checked ? '1' : '0');
+            
+            const imageFile = document.getElementById('eventImage').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            createEvent(formData);
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            let pageContent = '';
+            switch (adminState.currentPage) {
+                case 'overview': pageContent = renderOverview(); break;
+                case 'users': pageContent = renderUsers(); break;
+                case 'products': pageContent = renderProducts(); break;
+                case 'withdrawals': pageContent = renderWithdrawals(); break;
+                case 'commissionRates': pageContent = renderCommissionRates(); break;
+                case 'levelSettings': pageContent = renderLevelSettings(); break;
+                case 'notifications': pageContent = renderNotifications(); break;
+                case 'chat': pageContent = renderChat(); break;
+                case 'events': pageContent = renderEventsPage(); break;
+                default: pageContent = renderOverview();
+            }
+            app.innerHTML = `
+                <div class="admin-layout">
+                    ${renderSidebar()}
+                    <div class="main-content">
+                        ${pageContent}
+                    </div>
+                </div>
+                ${renderModal()}
+            `;
+            
+            // Re-attach event listeners after rendering (for dynamically created buttons)
+            attachEventListeners();
+        }
+        
+        function attachEventListeners() {
+            
+            // Manage user buttons in overview and users page
+            document.querySelectorAll('[data-action="manage-user"]').forEach(btn => {
+                // Clone and replace to remove old listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const userId = newBtn.getAttribute('data-user-id');
+                    const user = adminState.users.find(u => u.id == userId);
+                    if (user) {
+                        openModal("viewUser", user);
+                    } else {
+                    }
+                });
+            });
+            
+            // Generic modal open buttons (upload product, upload voucher, etc.)
+            document.querySelectorAll('[data-action="open-modal"]').forEach(btn => {
+                // Clone and replace to remove old listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                newBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const modalType = newBtn.getAttribute('data-modal-type');
+                    if (modalType) {
+                        openModal(modalType);
+                    } else {
+                    }
+                });
+            });
+            
+        }
+    </script>
+</body>
+</html>
