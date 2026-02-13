@@ -2779,9 +2779,21 @@
             }
         }
 
+        // Helper function to get VIP level name
+        function getVipLevelName(level) {
+            const levelNames = {
+                1: 'Foundation',
+                2: 'Growth',
+                3: 'Advance',
+                4: 'Pinnacle',
+                5: 'Elite'
+            };
+            return levelNames[level] || `Level ${level}`;
+        }
+
         const vipLevels = [
             {
-                level: 'VIP1',
+                level: 'Foundation',
                 icon: '💎',
                 description: 'Suitable for most data capture scenarios involving light to medium usage',
                 profit: '0.5% per album data',
@@ -2790,7 +2802,7 @@
                 access: 'No access to other Premium features'
             },
             {
-                level: 'VIP2',
+                level: 'Growth',
                 icon: '💠',
                 description: 'Suitable for most data capture scenarios involving light to medium usage',
                 profit: '1% per task 45 tasks per set',
@@ -2799,7 +2811,7 @@
                 access: 'No access to other Premium features'
             },
             {
-                level: 'VIP3',
+                level: 'Advance',
                 icon: '🔷',
                 description: 'Suitable for heavy data capture scenarios',
                 profit: '1.5% per task 50 tasks per set',
@@ -2808,7 +2820,7 @@
                 access: 'Access to Premium features'
             },
             {
-                level: 'VIP4',
+                level: 'Pinnacle',
                 icon: '💠',
                 description: 'Premium tier for professional usage',
                 profit: '2% per task 55 tasks per set',
@@ -2817,7 +2829,7 @@
                 access: 'Full access to all Premium features'
             },
             {
-                level: 'VIP5',
+                level: 'Elite',
                 icon: '💎',
                 description: 'Premium tier for professional usage',
                 profit: '2.5% per task 60 tasks per set',
@@ -2880,7 +2892,7 @@
             {
                 name: 'James Wilson',
                 rating: 5.0,
-                comment: 'I can\'t believe I earned 15k in my first month! This platform changed my life. Level 5 is where it\'s at!',
+                comment: 'I can\'t believe I earned 15k in my first month! This platform changed my life. Elite is where it\'s at!',
                 avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
                 level: 5
             }
@@ -5469,7 +5481,7 @@
                             <div style="color: white;">
                                 <div>${t('hiUser')} ${user.username || 'User'} 👋</div>
                             </div>
-                            <div class="profile-badge">Level ${user.level || 1}</div>
+                            <div class="profile-badge">${getVipLevelName(user.level || 1)}</div>
                         </div>
 
                         <!-- Stats Container - Today's Profit, Balance, Pending Balance -->
@@ -6017,7 +6029,7 @@
                             <div style="color: white;">
                                 <div style="font-size: 20px; font-weight: bold;">My Records</div>
                             </div>
-                            <div class="profile-badge">Level ${user.level || 1}</div>
+                            <div class="profile-badge">${getVipLevelName(user.level || 1)}</div>
                         </div>
 
                         <!-- Tabs -->
@@ -6550,11 +6562,11 @@
                         <div class="white-box" style="margin-bottom: 20px;">
                             <h4 style="font-weight: bold; color: #00CED1; margin-bottom: 12px;">5. Normal Album Data</h4>
                             <ul style="color: #6b7280; line-height: 1.8; padding-left: 20px;">
-                                <li style="margin-bottom: 8px;">5.1 VIP 1 users can complete 2 sets of data submissions per day with a 0.5% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.2 VIP 2 users can complete 2 sets of data submissions per day with a 1.0% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.3 VIP 3 users can complete 2 sets of data submissions per day with a 1.5% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.4 VIP 4 users can complete 2 sets of data submissions per day with a 2.0% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.5 VIP 5 users can complete 2 sets of data submissions per day with a 2.5% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.1 Foundation (VIP 1) users can complete 2 sets of data submissions per day with a 0.5% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.2 Growth (VIP 2) users can complete 2 sets of data submissions per day with a 1.0% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.3 Advance (VIP 3) users can complete 2 sets of data submissions per day with a 1.5% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.4 Pinnacle (VIP 4) users can complete 2 sets of data submissions per day with a 2.0% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.5 Elite (VIP 5) users can complete 2 sets of data submissions per day with a 2.5% profit for each normal album data.</li>
                                 <li style="margin-bottom: 8px;">5.6 Upon successful submission of album data, the commission will be automatically credited to the user's account balance.</li>
                                 <li style="margin-bottom: 8px;">5.7 The system will randomly assign album data to the user's account based on their account balance.</li>
                                 <li style="margin-bottom: 8px;">5.8 Once the data is assigned to the user's account, it cannot be canceled, skipped, or exchanged.</li>
