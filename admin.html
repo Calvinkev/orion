@@ -1659,7 +1659,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="font-weight: 600; color: #f97316; font-size: 16px;">$${parseFloat(withdrawal.amount).toFixed(2)}</td>
+                                    <td style="font-weight: 600; color: #00CED1; font-size: 16px;">$${parseFloat(withdrawal.amount).toFixed(2)}</td>
                                     <td>
                                         <span style="background: #e0e7ff; color: #4f46e5; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">
                                             ${withdrawal.withdraw_type || withdrawal.user_withdraw_type || 'N/A'}
@@ -1736,7 +1736,7 @@
                 <!-- Level Icons Section -->
                 <div class="table-container" style="margin-bottom: 24px;">
                     <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <h3 style="margin-bottom: 20px; color: #f97316;">🏅 Level Icons</h3>
+                        <h3 style="margin-bottom: 20px; color: #00CED1;">🏅 Level Icons</h3>
                         <p style="color: #6b7280; margin-bottom: 20px; font-size: 14px;">Upload coin/badge icons for each level. These are displayed next to usernames to show their premium status.</p>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                             ${[1, 2, 3, 4, 5].map(level => {
@@ -1920,7 +1920,7 @@
                                             const tasksInSet = tasksToday;
                                             // Total today = Set 1 tasks (if completed) + current set progress
                                             const totalToday = currentSet === 2 ? taskLimits.perSet + tasksToday : tasksToday;
-                                            return `<strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #ea580c;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}) | Total Today: ${totalToday}/${taskLimits.total}`;
+                                            return `<strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #00CED1;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}) | Total Today: ${totalToday}/${taskLimits.total}`;
                                         })()}
                                     </p>
                                     <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%;" onclick="resetUserTasks(${item.id})">
@@ -2503,7 +2503,7 @@
                             <div style="flex: 1; padding: 16px; overflow-y: auto; background: #f9fafb;" id="adminChatMessages">
                                 ${adminState.chatMessages.map(msg => `
                                     <div style="margin-bottom: 16px; display: flex; flex-direction: column; ${msg.sender_type === 'admin' ? 'align-items: flex-end;' : 'align-items: flex-start;'}">
-                                        <div style="max-width: 70%; padding: 10px 14px; border-radius: 12px; word-wrap: break-word; ${msg.sender_type === 'admin' ? 'background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;' : 'background: white; color: #1f2937; border: 1px solid #e5e7eb;'}">
+                                        <div style="max-width: 70%; padding: 10px 14px; border-radius: 12px; word-wrap: break-word; ${msg.sender_type === 'admin' ? 'background: linear-gradient(135deg, #00BFFF 0%, #00CED1 100%); color: white;' : 'background: white; color: #1f2937; border: 1px solid #e5e7eb;'}">
                                             ${msg.message}
                                             ${msg.image_path ? `<img src="${window.RANKSCIENCE_API_BASE_URL.replace('/api', '')}/${msg.image_path}" style="max-width: 250px; border-radius: 8px; margin-top: 8px; cursor: pointer;" onclick="window.open('${window.RANKSCIENCE_API_BASE_URL.replace('/api', '')}/${msg.image_path}', '_blank')" />` : ''}
                                         </div>
