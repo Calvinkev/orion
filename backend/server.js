@@ -787,18 +787,16 @@ function sanitizeUserProduct(row) {
 }
 
 // Level-based task limits configuration
-// Level 1: 80 tasks (2 sets of 40)
-// Level 2: 90 tasks (2 sets of 45)
-// Level 3: 100 tasks (2 sets of 50)
-// Level 4: 110 tasks (2 sets of 55)
-// Level 5: 120 tasks (2 sets of 60)
+// Level 1: 135 tasks (3 sets of 45)
+// Level 2: 150 tasks (3 sets of 50)
+// Level 3: 165 tasks (3 sets of 55)
+// Level 4: 180 tasks (3 sets of 60)
 function getTaskLimitsForLevel(level) {
   const limits = {
-    1: { total: 80, perSet: 40 },
-    2: { total: 90, perSet: 45 },
-    3: { total: 100, perSet: 50 },
-    4: { total: 110, perSet: 55 },
-    5: { total: 120, perSet: 60 }
+    1: { total: 135, perSet: 45 },
+    2: { total: 150, perSet: 50 },
+    3: { total: 165, perSet: 55 },
+    4: { total: 180, perSet: 60 }
   };
   return limits[level] || limits[1]; // Default to level 1 if unknown
 }
@@ -2204,8 +2202,8 @@ app.delete('/api/admin/users/:id', authMiddleware, adminMiddleware, async (req, 
 // Get level icon for a specific level (public endpoint)
 app.get('/api/level-icons/:level', (req, res) => {
   const level = parseInt(req.params.level);
-  if (isNaN(level) || level < 1 || level > 5) {
-    return res.status(400).json({ error: 'Invalid level. Must be 1-5.' });
+  if (isNaN(level) || level < 1 || level > 4) {
+    return res.status(400).json({ error: 'Invalid level. Must be 1-4.' });
   }
   
   const levelIconsPath = path.join(UPLOAD_BASE, 'levelicons');
@@ -2327,6 +2325,69 @@ app.delete('/api/admin/level-icons/:level', authMiddleware, adminMiddleware, asy
 });
 
 // ========== END LEVEL ICONS MANAGEMENT ==========
+
+// ========== CERTIFICATE IMAGE MANAGEMENT ==========
+
+// Certificate image storage
+const certificateStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(UPLOAD_BASE, 'certificates');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `certificate${ext}`);
+  }
+});
+const uploadCertificate = multer({ storage: certificateStorage, fileFilter: imageFileFilter });
+
+// Get certificate image (public endpoint)
+app.get('/api/certificate-image', (req, res) => {
+  const certPath = path.join(UPLOAD_BASE, 'certificates');
+  const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+  
+  for (const ext of extensions) {
+    const filePath = path.join(certPath, `certificate${ext}`);
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+  }
+  
+  res.status(404).json({ error: 'No certificate image found' });
+});
+
+// Upload certificate image (admin only)
+app.post('/api/admin/certificate-image', authMiddleware, adminMiddleware, uploadCertificate.single('certificate'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+    
+    // Delete old certificate images (different extensions)
+    const certPath = path.join(UPLOAD_BASE, 'certificates');
+    const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    for (const ext of extensions) {
+      const oldFile = path.join(certPath, `certificate${ext}`);
+      if (fs.existsSync(oldFile) && oldFile !== req.file.path) {
+        try { fs.unlinkSync(oldFile); } catch(e) {}
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Certificate image uploaded successfully',
+      url: '/api/certificate-image'
+    });
+  } catch (err) {
+    console.error('Failed to upload certificate image:', err);
+    res.status(500).json({ error: 'Failed to upload certificate image' });
+  }
+});
+
+// ========== END CERTIFICATE IMAGE MANAGEMENT ==========
 
 app.get('/api/admin/products', authMiddleware, adminMiddleware, async (req, res) => {
   try {
@@ -2792,13 +2853,15 @@ app.post('/api/admin/reset-user-tasks', authMiddleware, adminMiddleware, async (
     const tasksPerSet = taskLimits.perSet;
     const totalTasks = taskLimits.total;
     
-    // If user completed Set 1, reset their task count to 0 and move them to Set 2
-    let newSet = 2; // Move to Set 2 so they can continue
+    // If user completed a set, reset their task count to 0 and move them to the next set
+    const currentSet = user.current_set || 1;
+    let newSet = currentSet + 1;
+    if (newSet > 3) newSet = 3; // Cap at Set 3
     
-    console.log('[RESET TASKS] Resetting user', userId, 'to Set', newSet, 'with tasks_completed_today = 0');
+    console.log('[RESET TASKS] Resetting user', userId, 'from Set', currentSet, 'to Set', newSet, 'with tasks_completed_today = 0');
     
-    // Reset tasks_completed_today to 0 and move to Set 2
-    // This ensures the count starts fresh for Set 2
+    // Reset tasks_completed_today to 0 and move to next set
+    // This ensures the count starts fresh for the next set
     await pool.query(
       'UPDATE users SET current_set = ?, tasks_completed_today = 0 WHERE id = ?',
       [newSet, userId]
@@ -2809,10 +2872,10 @@ app.post('/api/admin/reset-user-tasks', authMiddleware, adminMiddleware, async (
     // Notify user
     await pool.query(
       'INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)',
-      [userId, 'Tasks Reset', `Your tasks have been reset by admin. You can now continue to Set 2 (${tasksPerSet} more tasks)!`]
+      [userId, 'Tasks Reset', `Your tasks have been reset by admin. You can now continue to Set ${newSet} (${tasksPerSet} more tasks)!`]
     );
     
-    res.json({ success: true, message: `User task count reset to 0/30 and moved to Set 2` });
+    res.json({ success: true, message: `User task count reset to 0 and moved to Set ${newSet}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to reset tasks' });
@@ -3976,13 +4039,27 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
       });
     }
     
-    // Check if user has completed Set 2 (should terminate after Set 2)
+    // Check if user has completed Set 2
     if (userCurrentSet === 2 && currentTasksCompleted >= tasksPerSet) {
       await conn.rollback();
       return res.status(403).json({ 
         error: 'SET_2_COMPLETE',
         errorCode: 'SET_2_COMPLETE',
-        message: `You have completed Set 2 (${tasksPerSet} tasks). All tasks for today are complete. Come back tomorrow!`,
+        message: `You have completed Set 2 (${tasksPerSet} tasks). Please contact customer care to reset for Set 3.`,
+        tasksCompleted: currentTasksCompleted,
+        currentSet: userCurrentSet,
+        tasksPerSet: tasksPerSet,
+        requiresAction: true
+      });
+    }
+
+    // Check if user has completed Set 3 (final set - should terminate)
+    if (userCurrentSet === 3 && currentTasksCompleted >= tasksPerSet) {
+      await conn.rollback();
+      return res.status(403).json({ 
+        error: 'SET_3_COMPLETE',
+        errorCode: 'SET_3_COMPLETE',
+        message: `You have completed Set 3 (${tasksPerSet} tasks). All tasks for today are complete. Come back tomorrow!`,
         tasksCompleted: currentTasksCompleted,
         currentSet: userCurrentSet,
         tasksPerSet: tasksPerSet,

@@ -378,6 +378,35 @@
             }
         }
 
+        async function uploadCertificateImage() {
+            const input = document.getElementById('certificateInput');
+            if (!input || !input.files || !input.files[0]) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('certificate', input.files[0]);
+            
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/certificate-image`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Upload failed');
+                
+                alert('Certificate image uploaded successfully!');
+                render();
+            } catch (error) {
+                alert('Failed to upload certificate: ' + error.message);
+            }
+        }
+
         // Chat functions
         async function loadChatUsers() {
             try {
@@ -1739,14 +1768,13 @@
                         <h3 style="margin-bottom: 20px; color: #00CED1;">🏅 Level Icons</h3>
                         <p style="color: #6b7280; margin-bottom: 20px; font-size: 14px;">Upload coin/badge icons for each level. These are displayed next to usernames to show their premium status.</p>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                            ${[1, 2, 3, 4, 5].map(level => {
+                            ${[1, 2, 3, 4].map(level => {
                                 const iconInfo = adminState.levelIcons.find(i => i.level === level) || { exists: false };
                                 const levelColors = {
                                     1: '#808080', // Grey
                                     2: '#c0c0c0', // Silver
                                     3: '#b08d57', // Bronze
-                                    4: '#10b981', // Emerald
-                                    5: '#ffd700'  // Gold
+                                    4: '#10b981'  // Emerald
                                 };
                                 return `
                                     <div style="background: linear-gradient(135deg, ${levelColors[level]}22, ${levelColors[level]}11); border: 2px solid ${levelColors[level]}; border-radius: 12px; padding: 16px; text-align: center;">
@@ -1769,6 +1797,24 @@
                                     </div>
                                 `;
                             }).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificate Image Section -->
+                <div class="table-container" style="margin-bottom: 24px;">
+                    <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 20px; color: #00CED1;">📜 Certificate Image</h3>
+                        <p style="color: #6b7280; margin-bottom: 20px; font-size: 14px;">Upload a certificate image that users can view in their app under the Certificate menu.</p>
+                        <div style="text-align: center;">
+                            <div style="width: 300px; max-width: 100%; margin: 0 auto 16px; background: #f3f4f6; border-radius: 16px; padding: 16px; border: 2px dashed #00CED1;">
+                                <img id="certificatePreview" src="${API_URL}/api/certificate-image?t=${Date.now()}" alt="Certificate" style="width: 100%; border-radius: 12px; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div style="display: none; padding: 40px; color: #9ca3af; font-size: 14px;">No certificate uploaded yet</div>
+                            </div>
+                            <input type="file" id="certificateInput" accept="image/*" style="display: none;" onchange="uploadCertificateImage()">
+                            <button class="btn" style="background: #00CED1; font-size: 14px; padding: 10px 24px;" onclick="document.getElementById('certificateInput').click()">
+                                📤 Upload Certificate Image
+                            </button>
                         </div>
                     </div>
                 </div>

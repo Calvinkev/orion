@@ -266,13 +266,13 @@
         .auth-page {
             min-height: 100vh;
             display: flex;
-            background-color: #0f172a;
+            background-color: #000000;
         }
         
         /* Brand Panel (Left Side) */
         .auth-brand {
             width: 50%;
-            background: linear-gradient(135deg, rgba(0, 206, 209, 0.3) 0%, #0f172a 100%);
+            background: linear-gradient(135deg, rgba(0, 206, 209, 0.2) 0%, #000000 100%);
             color: white;
             padding: 48px;
             display: flex;
@@ -310,7 +310,7 @@
         /* Form Panel (Right Side) */
         .auth-form-panel {
             width: 50%;
-            background: #1e293b;
+            background: #1a1a1a;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -366,9 +366,9 @@
             width: 100%;
             padding: 12px 14px;
             font-size: 15px;
-            border: 1px solid #475569;
+            border: 1px solid #333333;
             border-radius: 8px;
-            background: #0f172a;
+            background: #111111;
             color: #ffffff;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
@@ -2022,7 +2022,7 @@
             notifications: [],
             toasts: [],
             events: [],
-            taskLimits: { total: 80, perSet: 40 }, // Will be updated based on user level
+            taskLimits: { total: 135, perSet: 45 }, // Will be updated based on user level
             currentLanguage: localStorage.getItem('selectedLanguage') || 'English',
             showRegistrationBonusModal: false,
             registrationBonusShown: false,
@@ -2480,18 +2480,16 @@
         }
 
         // Level-based task limits configuration
-        // Level 1: 80 tasks (2 sets of 40)
-        // Level 2: 90 tasks (2 sets of 45)
-        // Level 3: 100 tasks (2 sets of 50)
-        // Level 4: 110 tasks (2 sets of 55)
-        // Level 5: 120 tasks (2 sets of 60)
+        // Level 1: 135 tasks (3 sets of 45)
+        // Level 2: 150 tasks (3 sets of 50)
+        // Level 3: 165 tasks (3 sets of 55)
+        // Level 4: 180 tasks (3 sets of 60)
         function getTaskLimitsForLevel(level) {
             const limits = {
-                1: { total: 80, perSet: 40 },
-                2: { total: 90, perSet: 45 },
-                3: { total: 100, perSet: 50 },
-                4: { total: 110, perSet: 55 },
-                5: { total: 120, perSet: 60 }
+                1: { total: 135, perSet: 45 },
+                2: { total: 150, perSet: 50 },
+                3: { total: 165, perSet: 55 },
+                4: { total: 180, perSet: 60 }
             };
             return limits[level] || limits[1];
         }
@@ -2801,44 +2799,35 @@
                 icon: '💎',
                 description: 'Suitable for most data capture scenarios involving light to medium usage',
                 profit: '0.5% per album data',
-                ratings: 'Up to 80 submissions per day',
-                sets: 'One can perform a maximum of 2 sets in a single day',
+                ratings: 'Up to 135 submissions per day',
+                sets: 'One can perform a maximum of 3 sets in a single day',
                 access: 'No access to other Premium features'
             },
             {
                 level: 'Growth',
                 icon: '💠',
                 description: 'Suitable for most data capture scenarios involving light to medium usage',
-                profit: '1% per task 45 tasks per set',
-                ratings: 'Up to 90 optimise ratings per day',
-                sets: 'One can perform a maximum of 2 sets of albums in a single day',
+                profit: '1% per task 50 tasks per set',
+                ratings: 'Up to 150 optimise ratings per day',
+                sets: 'One can perform a maximum of 3 sets of albums in a single day',
                 access: 'No access to other Premium features'
             },
             {
                 level: 'Advance',
                 icon: '🔷',
                 description: 'Suitable for heavy data capture scenarios',
-                profit: '1.5% per task 50 tasks per set',
-                ratings: 'Up to 100 optimise ratings per day',
-                sets: 'One can perform a maximum of 2 sets of album maintenance in a single day',
+                profit: '1.5% per task 55 tasks per set',
+                ratings: 'Up to 165 optimise ratings per day',
+                sets: 'One can perform a maximum of 3 sets of album maintenance in a single day',
                 access: 'Access to Premium features'
             },
             {
                 level: 'Pinnacle',
                 icon: '💠',
                 description: 'Premium tier for professional usage',
-                profit: '2% per task 55 tasks per set',
-                ratings: 'Up to 110 optimise ratings per day',
-                sets: 'One can perform a maximum of 2 sets of album maintenance in a single day',
-                access: 'Full access to all Premium features'
-            },
-            {
-                level: 'Elite',
-                icon: '💎',
-                description: 'Premium tier for professional usage',
-                profit: '2.5% per task 60 tasks per set',
-                ratings: 'Up to 120 optimise ratings per day',
-                sets: 'One can perform a maximum of 2 sets of album maintenance in a single day',
+                profit: '2% per task 60 tasks per set',
+                ratings: 'Up to 180 optimise ratings per day',
+                sets: 'One can perform a maximum of 3 sets of album maintenance in a single day',
                 access: 'Full access to all Premium features'
             }
         ];
@@ -2896,9 +2885,9 @@
             {
                 name: 'James Wilson',
                 rating: 5.0,
-                comment: 'I can\'t believe I earned 15k in my first month! This platform changed my life. Elite is where it\'s at!',
+                comment: 'I can\'t believe I earned 15k in my first month! This platform changed my life. Pinnacle is where it\'s at!',
                 avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
-                level: 5
+                level: 4
             }
         ];
 
@@ -4721,35 +4710,41 @@
             
             const userLevel = state.user?.level || 1;
             const limits = getTaskLimitsForLevel(userLevel);
+            const currentSet = state.user?.current_set || 1;
+            const nextSet = currentSet + 1;
+            const isLastSet = currentSet >= 3;
             
             return `
                 <div class="error-modal-overlay" onclick="closeSetCompleteModal()">
                     <div class="error-modal" onclick="event.stopPropagation()">
                         <div class="error-modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #00CED1 100%);">
                             <div class="error-modal-icon">🎉</div>
-                            <div class="error-modal-title">Set 1 Complete!</div>
+                            <div class="error-modal-title">Set ${currentSet} Complete!</div>
                         </div>
                         <div class="error-modal-body">
                             <p class="error-modal-message">
-                                Congratulations! You've completed the first set of ${limits.perSet} tasks today.
-                                <br><br>
-                                <strong>To continue with Set 2 (${limits.perSet} more tasks), choose an option:</strong>
+                                ${isLastSet 
+                                    ? `Congratulations! You've completed all 3 sets of ${limits.perSet} tasks today. Come back tomorrow!`
+                                    : `Congratulations! You've completed Set ${currentSet} of ${limits.perSet} tasks today.<br><br><strong>To continue with Set ${nextSet} (${limits.perSet} more tasks), choose an option:</strong>`
+                                }
                             </p>
                             
                             <div class="error-modal-balance" style="background: linear-gradient(135deg, #334155 0%, #475569 100%); border: none;">
                                 <div class="error-modal-balance-label" style="color: #00ACC1;">Progress Today</div>
-                                <div class="error-modal-balance-amount" style="color: #00ACC1;">${limits.perSet}/${limits.total} Tasks ✅</div>
+                                <div class="error-modal-balance-amount" style="color: #00ACC1;">${limits.perSet * currentSet}/${limits.total} Tasks ✅</div>
                             </div>
                             
                             <div class="error-modal-buttons" style="flex-direction: column; gap: 12px;">
+                                ${!isLastSet ? `
                                 <button class="error-modal-btn error-modal-btn-primary" onclick="window.open('https://t.me/Expert_Team_RS', '_blank'); closeSetCompleteModal();" style="width: 100%; padding: 16px;">
                                     💬 Contact Support to Reset Tasks
                                 </button>
                                 <button class="error-modal-btn" onclick="navigateTo('team'); closeSetCompleteModal();" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #f59e0b 0%, #00CED1 100%); color: white; border: none;">
                                     ⬆️ Upgrade Level to Continue
                                 </button>
+                                ` : ''}
                                 <button class="error-modal-btn error-modal-btn-secondary" onclick="closeSetCompleteModal()" style="width: 100%;">
-                                    Later
+                                    ${isLastSet ? 'Close' : 'Later'}
                                 </button>
                             </div>
                         </div>
@@ -5015,7 +5010,7 @@
                             <div style="margin-bottom: 20px;">
                                 <h4 style="font-weight: bold; color: #00CED1; margin-bottom: 10px;">2. Data Submissions</h4>
                                 <ul style="color: #94a3b8; line-height: 1.6; padding-left: 18px; font-size: 14px;">
-                                    <li style="margin-bottom: 6px;">2.1 Each day users are required to submit 2 sets of data, with the set count depending on the user's level.</li>
+                                    <li style="margin-bottom: 6px;">2.1 Each day users are required to submit 3 sets of data, with the set count depending on the user's level.</li>
                                     <li style="margin-bottom: 6px;">2.2 Submissions involve interaction with album data, with earnings accrued based on a formula determined by the user's level.</li>
                                     <li style="margin-bottom: 6px;">2.3 Users are bound to use their initial account balance to fund an album's cost before proceeding with data submission.</li>
                                 </ul>
@@ -5082,7 +5077,7 @@
                             <div style="margin-bottom: 24px;">
                                 <h3 style="font-size: 16px; font-weight: bold; color: #fbbf24; margin-bottom: 12px; border-bottom: 2px solid #fbbf24; padding-bottom: 6px;">1. Check-in Overview</h3>
                                 <p style="color: #94a3b8; line-height: 1.6; font-size: 14px;">
-                                    Users can earn incremental rewards by signing in consecutively for 7 days. Each day's reward increases according to the schedule below, but users must complete at least <strong>two daily sets of assignments</strong> to qualify for that day's reward.
+                                    Users can earn incremental rewards by signing in consecutively for 7 days. Each day's reward increases according to the schedule below, but users must complete at least <strong>three daily sets of assignments</strong> to qualify for that day's reward.
                                 </p>
                             </div>
 
@@ -5138,8 +5133,8 @@
                                     <h4 style="font-weight: bold; color: #f59e0b; margin-bottom: 8px; font-size: 15px;">Daily Eligibility:</h4>
                                     <p style="color: #94a3b8; line-height: 1.6; font-size: 14px; margin-bottom: 8px;">To claim the reward for a specific day, users must:</p>
                                     <ul style="color: #94a3b8; line-height: 1.6; padding-left: 18px; font-size: 14px;">
-                                        <li style="margin-bottom: 6px;">Complete <strong>two sets</strong> within the same calendar day (9:00 am – 9:59 pm CDT).</li>
-                                        <li style="margin-bottom: 6px;">Sign in manually after completing the two sets of assignments.</li>
+                                        <li style="margin-bottom: 6px;">Complete <strong>three sets</strong> within the same calendar day (9:00 am – 9:59 pm CDT).</li>
+                                        <li style="margin-bottom: 6px;">Sign in manually after completing the three sets of assignments.</li>
                                     </ul>
                                 </div>
 
@@ -5238,6 +5233,7 @@
         // Render Functions
         function renderLogin() {
             return `
+                <a href="index.html" class="official-website-btn">Official Website</a>
                 <div class="auth-page">
                     <!-- Left Panel - Brand -->
                     <div class="auth-brand">
@@ -5249,8 +5245,8 @@
                             </svg>
                             Orion Music
                         </div>
-                        <h1>Elevate Your Music Career.</h1>
-                        <p>Log in to access your dashboard and manage your music promotion campaigns.</p>
+                        <h1>Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
+                        <p>Shape the future <span style="color: #87CEEB;">of</span> music.</p>
                     </div>
                     
                     <!-- Right Panel - Form -->
@@ -5365,6 +5361,18 @@
                         <button onclick="navigateTo('services')" style="display: inline-flex; flex-direction: column; align-items: center; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
                             <span style="font-size: 20px; margin-bottom: 4px;">ℹ️</span>
                             <span style="font-size: 11px; font-weight: 600;">ABOUT</span>
+                        </button>
+                        <button onclick="navigateTo('certificate')" style="display: inline-flex; flex-direction: column; align-items: center; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
+                            <span style="font-size: 20px; margin-bottom: 4px;">📜</span>
+                            <span style="font-size: 11px; font-weight: 600;">CERTIFICATE</span>
+                        </button>
+                        <button onclick="navigateTo('faqs')" style="display: inline-flex; flex-direction: column; align-items: center; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
+                            <span style="font-size: 20px; margin-bottom: 4px;">❓</span>
+                            <span style="font-size: 11px; font-weight: 600;">FAQs</span>
+                        </button>
+                        <button onclick="navigateTo('userReviews')" style="display: inline-flex; flex-direction: column; align-items: center; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
+                            <span style="font-size: 20px; margin-bottom: 4px;">⭐</span>
+                            <span style="font-size: 11px; font-weight: 600;">REVIEWS</span>
                         </button>
                     </div>
 
@@ -5654,6 +5662,18 @@
                             <span style="font-size: 20px;">🎉</span>
                             <span>${t('events')}</span>
                         </button>
+                        <button onclick="navigateTo('certificate')">
+                            <span style="font-size: 20px;">📜</span>
+                            <span>Certificate</span>
+                        </button>
+                        <button onclick="navigateTo('faqs')">
+                            <span style="font-size: 20px;">❓</span>
+                            <span>FAQs</span>
+                        </button>
+                        <button onclick="navigateTo('userReviews')">
+                            <span style="font-size: 20px;">⭐</span>
+                            <span>User Reviews</span>
+                        </button>
                         <button onclick="navigateTo('luckyDraw')">
                             <span style="font-size: 20px;">🎰</span>
                             <span>Lucky Draw</span>
@@ -5689,7 +5709,7 @@
                                 `).join('')}
                             </div>
                         </div>
-                        <button onclick="window.open('https://t.me/Expert_Team_RS', '_blank')">
+                        <button onclick="state.supportOptionsOpen = !state.supportOptionsOpen; render();">
                             <span style="font-size: 20px;">💬</span>
                             <span>${t('support')}</span>
                         </button>
@@ -5723,13 +5743,12 @@
                 1: '#808080', // Grey
                 2: '#c0c0c0', // Silver
                 3: '#b08d57', // Bronze
-                4: '#10b981', // Emerald Green
-                5: '#ffd700'  // Gold
+                4: '#10b981'  // Emerald Green
             };
             const userLevel = user.level || 1;
             const starColor = levelColors[userLevel] || '#ffd700';
             const fullStars = userLevel;
-            const emptyStars = 5 - fullStars;
+            const emptyStars = 4 - fullStars;
             // Badge image for user level
             const badgeImg = `${API_BASE_URL}/level-icons/${userLevel}`;
 
@@ -6019,10 +6038,11 @@
             // Separate products by status
             const pendingProducts = history.filter(p => p.status === 'in_progress');
             const completedProducts = history.filter(p => p.status === 'completed');
+            const allProducts = history;
             
             // Initialize active tab if not set
             if (!state.recordsTab) {
-                state.recordsTab = 'completed';
+                state.recordsTab = 'all';
             }
             
             return `
@@ -6037,16 +6057,22 @@
                         </div>
 
                         <!-- Tabs -->
-                        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                            <button 
+                                onclick="switchRecordsTab('all')"
+                                style="flex: 1; padding: 12px; background: ${state.recordsTab === 'all' ? 'white' : 'rgba(255,255,255,0.2)'}; color: ${state.recordsTab === 'all' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px;"
+                            >
+                                All (${allProducts.length})
+                            </button>
                             <button 
                                 onclick="switchRecordsTab('pending')"
-                                style="flex: 1; padding: 12px; background: ${state.recordsTab === 'pending' ? 'white' : 'rgba(255,255,255,0.2)'}; color: ${state.recordsTab === 'pending' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                style="flex: 1; padding: 12px; background: ${state.recordsTab === 'pending' ? 'white' : 'rgba(255,255,255,0.2)'}; color: ${state.recordsTab === 'pending' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px;"
                             >
                                 Pending ${pendingProducts.length > 0 ? `(${pendingProducts.length})` : ''}
                             </button>
                             <button 
                                 onclick="switchRecordsTab('completed')"
-                                style="flex: 1; padding: 12px; background: ${state.recordsTab === 'completed' ? 'white' : 'rgba(255,255,255,0.2)'}; color: ${state.recordsTab === 'completed' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                                style="flex: 1; padding: 12px; background: ${state.recordsTab === 'completed' ? 'white' : 'rgba(255,255,255,0.2)'}; color: ${state.recordsTab === 'completed' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px;"
                             >
                                 Completed (${completedProducts.length})
                             </button>
@@ -6054,7 +6080,7 @@
 
                         <!-- Content based on active tab -->
                         <div style="margin-bottom: 80px;">
-                            ${state.recordsTab === 'pending' ? renderPendingRecords(pendingProducts) : renderCompletedRecords(completedProducts)}
+                            ${state.recordsTab === 'all' ? renderAllRecords(allProducts) : state.recordsTab === 'pending' ? renderPendingRecords(pendingProducts) : renderCompletedRecords(completedProducts)}
                         </div>
                     </div>
                     ${renderBottomNav('records')}
@@ -6065,6 +6091,75 @@
         function switchRecordsTab(tab) {
             state.recordsTab = tab;
             render();
+        }
+        
+        function renderAllRecords(allProducts) {
+            if (allProducts.length === 0) {
+                return `
+                    <div class="white-box" style="text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                        <p style="color: #94a3b8; font-size: 16px;">No records yet</p>
+                        <p style="color: #9ca3af; font-size: 14px; margin-top: 8px;">
+                            Start submitting tasks to see your records here
+                        </p>
+                    </div>
+                `;
+            }
+            
+            const userBalance = state.user?.wallet_balance || state.user?.balance || 0;
+            const hasNegativeBalance = userBalance < 0;
+            
+            return allProducts.map(product => {
+                const isCompleted = product.status === 'completed';
+                const isPending = product.status === 'in_progress';
+                const userLevel = state.user?.level || 1;
+                const productPrice = product.custom_price || product['level' + userLevel + '_price'] || 0;
+                
+                return `
+                    <div class="white-box" style="margin-bottom: 16px; border-left: 4px solid ${isCompleted ? '#10b981' : isPending && hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
+                        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+                            <img 
+                                src="${product.image_path || '/backend/uploads/products/default.jpg'}" 
+                                alt="${product.name}" 
+                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; background: #1e293b;"
+                            >
+                            <div style="flex: 1;">
+                                <h4 style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 8px;">
+                                    ${product.name}
+                                </h4>
+                                <div style="display: flex; gap: 12px; font-size: 13px;">
+                                    ${isCompleted ? `
+                                    <div>
+                                        <span style="color: #9ca3af;">Earned:</span>
+                                        <span style="color: #10b981; font-weight: 600; margin-left: 4px;">$${(product.amount_earned || 0).toFixed(2)}</span>
+                                    </div>
+                                    <div>
+                                        <span style="color: #9ca3af;">Commission:</span>
+                                        <span style="color: #00CED1; font-weight: 600; margin-left: 4px;">$${(product.commission_earned || 0).toFixed(2)}</span>
+                                    </div>
+                                    ` : `
+                                    <div>
+                                        <span style="color: #9ca3af;">Price:</span>
+                                        <span style="color: #00CED1; font-weight: 600; margin-left: 4px;">$${Number(productPrice).toFixed(2)}</span>
+                                    </div>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #334155;">
+                            <div style="font-size: 12px; color: #9ca3af;">
+                                ${isCompleted 
+                                    ? `✓ Completed: ${formatDateSafe(product.submitted_at)}`
+                                    : `⏳ Started: ${formatDateSafe(product.assigned_date)}`
+                                }
+                            </div>
+                            <span style="background: ${isCompleted ? '#064e3b' : isPending && hasNegativeBalance ? '#fef2f2' : '#fef3c7'}; color: ${isCompleted ? '#34d399' : isPending && hasNegativeBalance ? '#dc2626' : '#d97706'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                ${isCompleted ? 'Completed' : isPending && hasNegativeBalance ? 'Deposit Required' : 'Pending'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
         
         function renderPendingRecords(pendingProducts) {
@@ -6338,6 +6433,7 @@
 
         function renderRegister() {
             return `
+                <a href="index.html" class="official-website-btn">Official Website</a>
                 <div class="auth-page">
                     <!-- Left Panel - Brand -->
                     <div class="auth-brand">
@@ -6349,8 +6445,8 @@
                             </svg>
                             Orion Music
                         </div>
-                        <h1>Start Your Music Journey.</h1>
-                        <p>Join thousands of artists using Orion Music to promote their music and earn commissions.</p>
+                        <h1>Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
+                        <p>Shape the future <span style="color: #87CEEB;">of</span> music.</p>
                     </div>
                     
                     <!-- Right Panel - Form -->
@@ -6539,7 +6635,7 @@
                             <h4 style="font-weight: bold; color: #00CED1; margin-bottom: 12px;">2. Withdrawal</h4>
                             <ul style="color: #94a3b8; line-height: 1.8; padding-left: 20px;">
                                 <li style="margin-bottom: 8px;">2.1 The maximum withdrawal limit for ordinary members is 10,000 USD. If the withdrawal amount exceeds 10,000 USD, users must upgrade to the appropriate membership level, as each membership level has different withdrawal limits.</li>
-                                <li style="margin-bottom: 8px;">2.2 Users are required to complete two sets of data submissions per day in order to submit a withdrawal request. Additionally, users must request the withdrawal of their full account balance.</li>
+                                <li style="margin-bottom: 8px;">2.2 Users are required to complete three sets of data submissions per day in order to submit a withdrawal request. Additionally, users must request the withdrawal of their full account balance.</li>
                                 <li style="margin-bottom: 8px;">2.3 Users who abandon or quit during the data submission process are ineligible to apply for a withdrawal or refund.</li>
                                 <li style="margin-bottom: 8px;">2.4 If a withdrawal request has not been formally submitted by the user, the platform cannot process any withdrawal on the user's behalf.</li>
                             </ul>
@@ -6566,14 +6662,13 @@
                         <div class="white-box" style="margin-bottom: 20px;">
                             <h4 style="font-weight: bold; color: #00CED1; margin-bottom: 12px;">5. Normal Album Data</h4>
                             <ul style="color: #94a3b8; line-height: 1.8; padding-left: 20px;">
-                                <li style="margin-bottom: 8px;">5.1 Foundation (VIP 1) users can complete 2 sets of data submissions per day with a 0.5% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.2 Growth (VIP 2) users can complete 2 sets of data submissions per day with a 1.0% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.3 Advance (VIP 3) users can complete 2 sets of data submissions per day with a 1.5% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.4 Pinnacle (VIP 4) users can complete 2 sets of data submissions per day with a 2.0% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.5 Elite (VIP 5) users can complete 2 sets of data submissions per day with a 2.5% profit for each normal album data.</li>
-                                <li style="margin-bottom: 8px;">5.6 Upon successful submission of album data, the commission will be automatically credited to the user's account balance.</li>
-                                <li style="margin-bottom: 8px;">5.7 The system will randomly assign album data to the user's account based on their account balance.</li>
-                                <li style="margin-bottom: 8px;">5.8 Once the data is assigned to the user's account, it cannot be canceled, skipped, or exchanged.</li>
+                                <li style="margin-bottom: 8px;">5.1 Foundation (VIP 1) users can complete 3 sets of 45 data submissions per day with a 0.5% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.2 Growth (VIP 2) users can complete 3 sets of 50 data submissions per day with a 1.0% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.3 Advance (VIP 3) users can complete 3 sets of 55 data submissions per day with a 1.5% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.4 Pinnacle (VIP 4) users can complete 3 sets of 60 data submissions per day with a 2.0% profit for each normal album data.</li>
+                                <li style="margin-bottom: 8px;">5.5 Upon successful submission of album data, the commission will be automatically credited to the user's account balance.</li>
+                                <li style="margin-bottom: 8px;">5.6 The system will randomly assign album data to the user's account based on their account balance.</li>
+                                <li style="margin-bottom: 8px;">5.7 Once the data is assigned to the user's account, it cannot be canceled, skipped, or exchanged.</li>
                             </ul>
                         </div>
 
@@ -6633,6 +6728,15 @@
             }
             if (title === 'userEvents') {
                 return renderUserEventsPage();
+            }
+            if (title === 'certificate') {
+                return renderCertificatePage();
+            }
+            if (title === 'faqs') {
+                return renderFAQsPage();
+            }
+            if (title === 'userReviews') {
+                return renderUserReviewsPage();
             }
             if (title === 'loginPassword') {
                 return renderChangePasswordPage();
@@ -6794,6 +6898,108 @@
                                         <span style="color: #8b5cf6; font-size: 12px;">✨ Active Event</span>
                                     </div>
                                 </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Certificate Page - Shows certificate image uploaded by admin
+        function renderCertificatePage() {
+            return `
+                <div class="page" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                    <div class="header" style="background: transparent;">
+                        <button class="back-btn" onclick="navigateTo('home')">←</button>
+                        <h1>Certificate</h1>
+                        <div style="width: 24px;"></div>
+                    </div>
+                    <div class="content-box">
+                        <div class="white-box" style="text-align: center; padding: 24px;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📜</div>
+                            <h3 style="font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 16px;">Orion Music Certificate</h3>
+                            <div id="certificateContainer">
+                                <img src="${API_BASE_URL}/certificate-image" alt="Certificate" style="width: 100%; max-width: 600px; border-radius: 16px; border: 2px solid #00CED1; box-shadow: 0 4px 20px rgba(0, 206, 209, 0.3);" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; color: #94a3b8;\\'>No certificate has been uploaded yet. Please check back later.</div>'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // FAQs Page
+        function renderFAQsPage() {
+            const faqs = [
+                { q: 'How do I start earning?', a: 'After registration and making your first deposit, you will be assigned album data to submit. Each successful submission earns you a commission based on your level.' },
+                { q: 'How many sets can I complete per day?', a: 'Users can complete 3 sets of album data per day. The number of products per set depends on your level: Foundation (45), Growth (50), Advance (55), Pinnacle (60).' },
+                { q: 'How do I withdraw my earnings?', a: 'Go to My Center → Withdraw. You must complete all daily sets before requesting a withdrawal. Minimum withdrawal amount applies.' },
+                { q: 'What is a high-value order?', a: 'A high-value order is a premium album assignment that requires a deposit but earns you 10x the standard commission upon completion.' },
+                { q: 'How do I upgrade my level?', a: 'Contact the expert team on Telegram to discuss level upgrades. Higher levels earn higher commission rates and can process more products per set.' },
+                { q: 'What payment methods are supported?', a: 'We support BTC, LTC, USDC (ERC-20), USDT (TRC-20), SOL, and ETH for both deposits and withdrawals.' },
+                { q: 'How long do withdrawals take?', a: 'Withdrawal requests are typically processed within 24 hours during operating hours (10:00 AM - 11:00 PM).' },
+                { q: 'What if I forget my password?', a: 'Contact our customer support via the online chat or Telegram expert team to reset your password.' },
+                { q: 'Is my account balance safe?', a: 'Yes, all user funds are securely stored. The platform takes full responsibility for any accidental loss of funds as outlined in our Terms and Conditions.' },
+                { q: 'How does the referral system work?', a: 'Share your invite code with friends. When they register and start earning, you receive referral bonuses based on their activity.' }
+            ];
+
+            return `
+                <div class="page" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                    <div class="header" style="background: transparent;">
+                        <button class="back-btn" onclick="navigateTo('home')">←</button>
+                        <h1>FAQs</h1>
+                        <div style="width: 24px;"></div>
+                    </div>
+                    <div class="content-box">
+                        <div style="margin-bottom: 16px;">
+                            <h3 style="font-size: 20px; font-weight: bold; color: #00CED1; margin-bottom: 8px;">❓ Frequently Asked Questions</h3>
+                            <p style="color: #94a3b8; font-size: 14px;">Find answers to common questions about Orion Music</p>
+                        </div>
+                        ${faqs.map((faq, i) => `
+                            <div class="white-box" style="margin-bottom: 12px; cursor: pointer;" onclick="this.querySelector('.faq-answer').style.display = this.querySelector('.faq-answer').style.display === 'none' ? 'block' : 'none'; this.querySelector('.faq-arrow').textContent = this.querySelector('.faq-answer').style.display === 'none' ? '▼' : '▲';">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <h4 style="font-weight: 600; color: #ffffff; font-size: 15px; flex: 1;">${faq.q}</h4>
+                                    <span class="faq-arrow" style="color: #00CED1; font-size: 14px; margin-left: 12px;">▼</span>
+                                </div>
+                                <div class="faq-answer" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #334155;">
+                                    <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">${faq.a}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // User Reviews Page
+        function renderUserReviewsPage() {
+            return `
+                <div class="page" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                    <div class="header" style="background: transparent;">
+                        <button class="back-btn" onclick="navigateTo('home')">←</button>
+                        <h1>User Reviews</h1>
+                        <div style="width: 24px;"></div>
+                    </div>
+                    <div class="content-box">
+                        <div style="margin-bottom: 16px;">
+                            <h3 style="font-size: 20px; font-weight: bold; color: #00CED1; margin-bottom: 8px;">⭐ What Our Users Say</h3>
+                            <p style="color: #94a3b8; font-size: 14px;">Real experiences from Orion Music members</p>
+                        </div>
+                        ${userReviews.map(review => `
+                            <div class="white-box" style="margin-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                    <img src="${review.avatar}" alt="${review.name}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #00CED1;" onerror="this.style.display='none'">
+                                    <div style="flex: 1;">
+                                        <h4 style="font-weight: 600; color: #ffffff; font-size: 16px;">${review.name}</h4>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="color: #fbbf24; font-size: 14px;">${'★'.repeat(Math.floor(review.rating))}${review.rating % 1 >= 0.5 ? '½' : ''}${'☆'.repeat(5 - Math.ceil(review.rating))}</span>
+                                            <span style="color: #94a3b8; font-size: 12px;">${review.rating}/5</span>
+                                        </div>
+                                    </div>
+                                    <div style="background: #334155; padding: 4px 10px; border-radius: 8px;">
+                                        <span style="color: #00CED1; font-size: 12px; font-weight: 600;">Level ${review.level}</span>
+                                    </div>
+                                </div>
+                                <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; font-style: italic;">"${review.comment}"</p>
                             </div>
                         `).join('')}
                     </div>
