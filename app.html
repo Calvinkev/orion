@@ -41,122 +41,9 @@
             to { transform: rotate(360deg); }
         }
 
-        @keyframes wheelSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(3600deg); }
-        }
-
         @keyframes glow {
             0%, 100% { box-shadow: 0 0 20px rgba(0, 206, 209, 0.5); }
             50% { box-shadow: 0 0 40px rgba(0, 206, 209, 0.8), 0 0 60px rgba(0, 206, 209, 0.6); }
-        }
-
-        .lucky-wheel-container {
-            position: relative;
-            width: 320px;
-            height: 320px;
-            margin: 0 auto;
-        }
-
-        .lucky-wheel {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: relative;
-            border: 8px solid #00CED1;
-            box-shadow: 0 0 30px rgba(0, 206, 209, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.2);
-            background: conic-gradient(
-                from 0deg,
-                #e0f7fa 0deg 45deg,
-                #b2ebf2 45deg 90deg,
-                #80deea 90deg 135deg,
-                #4dd0e1 135deg 180deg,
-                #00CED1 180deg 225deg,
-                #00ACC1 225deg 270deg,
-                #0097a7 270deg 315deg,
-                #00838f 315deg 360deg
-            );
-            transition: transform 0.1s ease-out;
-        }
-
-        .lucky-wheel.spinning {
-            animation: wheelSpin 4s cubic-bezier(0.17, 0.67, 0.12, 0.99) forwards;
-        }
-
-        .wheel-segment {
-            position: absolute;
-            width: 50%;
-            height: 50%;
-            top: 50%;
-            left: 50%;
-            transform-origin: 0% 0%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        .wheel-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #00BFFF, #00CED1);
-            border-radius: 50%;
-            border: 6px solid white;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            z-index: 10;
-        }
-
-        .wheel-pointer {
-            position: absolute;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 40px solid #00CED1;
-            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
-            z-index: 20;
-        }
-
-        .spin-button {
-            background: linear-gradient(135deg, #00BFFF, #00CED1);
-            color: white;
-            border: none;
-            padding: 20px 60px;
-            font-size: 24px;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0, 206, 209, 0.4);
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .spin-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 12px 30px rgba(0, 206, 209, 0.6);
-        }
-
-        .spin-button:active {
-            transform: scale(0.98);
-        }
-
-        .spin-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: scale(1);
         }
 
         /* Scroll Animation Keyframes */
@@ -4212,30 +4099,34 @@
             
             popupOverlay.innerHTML = `
                 <div style="background: #1e293b; border-radius: 16px; padding: 24px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); animation: scaleIn 0.3s ease-out;">
-                    <!-- Product Image - Square with rounded corners like screenshot -->
+                    <!-- Product Image - Square with rounded corners -->
                     <div style="display: flex; justify-content: center; margin-bottom: 16px;">
                         <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                     </div>
                     
                     <!-- Product Name -->
-                    <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 6px;">${product.name}</h3>
+                    <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 12px;">${product.name}</h3>
                     
-                    <!-- Price -->
-                    <div style="font-size: 20px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">USD ${Number(productPrice).toFixed(2)}</div>
+                    <!-- Rating - 5 full stars -->
+                    <div style="color: #fbbf24; font-size: 22px; margin-bottom: 16px;">★★★★★</div>
                     
-                    <!-- Star Rating -->
-                    <div style="color: #fbbf24; font-size: 20px; margin-bottom: 20px;">★★★★★</div>
-                    
-                    <!-- Total Amount and Commission - Side by side like screenshot -->
-                    <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0; margin-bottom: 20px; padding: 16px; background: #0f172a; border-radius: 12px;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Total Amount</div>
-                            <div style="font-size: 18px; font-weight: 700; color: #00CED1;">USD ${Number(productPrice).toFixed(2)}</div>
+                    <!-- Product Details -->
+                    <div style="background: #0f172a; border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: left;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1e293b;">
+                            <span style="font-size: 14px; color: #94a3b8;">Data Value</span>
+                            <span style="font-size: 15px; font-weight: 700; color: #ffffff;">USD ${Number(productPrice).toFixed(2)}</span>
                         </div>
-                        <div style="width: 1px; background: #334155;"></div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Commission</div>
-                            <div style="font-size: 18px; font-weight: 700; color: #00CED1;">USD ${Number(commission).toFixed(2)}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1e293b;">
+                            <span style="font-size: 14px; color: #94a3b8;">Commission Profit(%)</span>
+                            <span style="font-size: 15px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1e293b;">
+                            <span style="font-size: 14px; color: #94a3b8;">Total Profit</span>
+                            <span style="font-size: 15px; font-weight: 700; color: #00CED1;">USD ${Number(commission).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+                            <span style="font-size: 14px; color: #94a3b8;">Rebates</span>
+                            <span style="font-size: 15px; font-weight: 700; color: #f59e0b;">${Number(productPrice).toFixed(0)} x ${(commissionRate * 100).toFixed(1)}</span>
                         </div>
                     </div>
                     
@@ -5245,7 +5136,7 @@
                             </svg>
                             Orion Music
                         </div>
-                        <h1>Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
+                        <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -1px; line-height: 1.1;">Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
                         <p>Shape the future <span style="color: #87CEEB;">of</span> music.</p>
                     </div>
                     
@@ -5301,7 +5192,7 @@
                 <div class="page">
                     <div class="header">
                         <h1>🎵 ORION</h1>
-                        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+                        <button class="menu-btn" onclick="navigateTo('mycenter')" style="font-size: 28px; line-height: 1;">👤</button>
                     </div>
 
                     <!-- Creative Banner - Orion Style -->
@@ -5463,7 +5354,6 @@
                     </div>
 
                     ${renderBottomNav()}
-                    ${state.menuOpen ? renderSideMenu() : ''}
                 </div>
             `;
         }
@@ -5575,22 +5465,16 @@
                                     <h3 style="font-size: 20px; font-weight: bold;">${t('pressStart')}</h3>
                                     <span style="font-size: 14px; opacity: 0.9;">${t('set')} ${state.currentSet || 1}</span>
                                 </div>
-                                <div style="text-align: right;">
-                                    <span style="font-size: 24px; font-weight: bold;">${(() => {
-                                        const limits = getTaskLimitsForLevel(user.level || 1);
-                                        // When admin resets to Set 2, tasks_completed_today is reset to 0 and only counts Set 2 tasks
-                                        // So for Set 2, use tasks_completed_today directly (no subtraction needed)
-                                        const tasksInCurrentSet = state.tasksCompletedToday || 0;
-                                        return Math.max(0, tasksInCurrentSet) + '/' + limits.perSet;
-                                    })()}</span>
-                                </div>
                             </div>
 
                             <div class="white-box">
                                 <div class="opt-grid">
                                     ${Array(9).fill(0).map((_, idx) => {
                                         if (idx === 4) {
-                                            return `<div class=\"opt-cell center\" onclick=\"loadAssignedProducts(); render();\">${state.loadingProducts ? '⏳' : 'Start'}</div>`;
+                                            const limits = getTaskLimitsForLevel(user.level || 1);
+                                            const tasksInCurrentSet = state.tasksCompletedToday || 0;
+                                            const countText = Math.max(0, tasksInCurrentSet) + '/' + limits.perSet;
+                                            return `<div class=\"opt-cell center\" onclick=\"loadAssignedProducts(); render();\" style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2;\">${state.loadingProducts ? '⏳' : '<span style=\"font-size: 13px; font-weight: 700;\">Starting Now</span><span style=\"font-size: 12px; font-weight: 600; opacity: 0.85; margin-top: 2px;\">(' + countText + ')</span>'}</div>`;
                                         }
                                         const imgIndex = (state.currentAppIndex + idx) % (state.productImages.length || 1);
                                         const product = state.productImages[imgIndex];
@@ -5674,10 +5558,6 @@
                             <span style="font-size: 20px;">⭐</span>
                             <span>User Reviews</span>
                         </button>
-                        <button onclick="navigateTo('luckyDraw')">
-                            <span style="font-size: 20px;">🎰</span>
-                            <span>Lucky Draw</span>
-                        </button>
                         <button onclick="navigateTo('withdraw')">
                             <span style="font-size: 20px;">🏧</span>
                             <span>${t('withdraw')}</span>
@@ -5752,6 +5632,18 @@
             // Badge image for user level
             const badgeImg = `${API_BASE_URL}/level-icons/${userLevel}`;
 
+            // Languages dropdown state
+            if (typeof state.myCenterLangOpen === 'undefined') state.myCenterLangOpen = false;
+            const languages = [
+                { name: 'English', icon: '🇬🇧' },
+                { name: 'Espanol', icon: '🇪🇸' },
+                { name: 'Francais', icon: '🇫🇷' },
+                { name: 'Svenska', icon: '🇸🇪' },
+                { name: 'Italiano', icon: '🇮🇹' },
+                { name: 'Deutsch', icon: '🇩🇪' },
+                { name: 'Nork', icon: '🌐' }
+            ];
+
             return `
                 <div class="page" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
                     <div class="header" style="background: transparent;">
@@ -5806,8 +5698,9 @@
                             </div>
                         </div>
 
+                        <!-- My Financial -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">My Financial</h3>
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">💰 My Financial</h3>
                             <div class="list-item" onclick="navigateTo('deposit')">
                                 <div class="list-item-left">
                                     <div class="list-icon" style="background: #334155; color: #00CED1;">💳</div>
@@ -5824,8 +5717,9 @@
                             </div>
                         </div>
 
+                        <!-- Account Settings -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">My Detail</h3>
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">⚙️ Account Settings</h3>
                             <div class="list-item" onclick="navigateTo('loginPassword')">
                                 <div class="list-item-left">
                                     <div class="list-icon" style="background: #334155; color: #00CED1;">✏️</div>
@@ -5849,12 +5743,67 @@
                             </div>
                         </div>
 
+                        <!-- Information -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">Other</h3>
-                            <div class="list-item" onclick="window.open('https://t.me/Expert_Team_RS', '_blank')">
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">📖 Information</h3>
+                            <div class="list-item" onclick="navigateTo('services')">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">🔧</div>
+                                    <span style="font-weight: 600;">About Us</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                            <div class="list-item" onclick="navigateTo('terms')">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">📋</div>
+                                    <span style="font-weight: 600;">Terms & Conditions</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                            <div class="list-item" onclick="navigateTo('certificate')">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">📜</div>
+                                    <span style="font-weight: 600;">Certificate</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                            <div class="list-item" onclick="navigateTo('faqs')">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">❓</div>
+                                    <span style="font-weight: 600;">FAQs</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                            <div class="list-item" onclick="navigateTo('userReviews')">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">⭐</div>
+                                    <span style="font-weight: 600;">User Reviews</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                            <div class="list-item" onclick="navigateTo('userEvents')">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">🎉</div>
+                                    <span style="font-weight: 600;">Events</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                        </div>
+
+                        <!-- Support & Tools -->
+                        <div class="white-box">
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">🛠 Support & Tools</h3>
+                            <div class="list-item" onclick="showSupportOptions();">
                                 <div class="list-item-left">
                                     <div class="list-icon" style="background: #334155; color: #00CED1;">💬</div>
-                                    <span style="font-weight: 600;">Contact Us</span>
+                                    <span style="font-weight: 600;">Support</span>
+                                </div>
+                                <span style="color: #9ca3af;">→</span>
+                            </div>
+                            <div class="list-item" onclick="state.showTrackingModal = true; render();">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #f59e0b;">📋</div>
+                                    <span style="font-weight: 600;">Tracking</span>
                                 </div>
                                 <span style="color: #9ca3af;">→</span>
                             </div>
@@ -5865,9 +5814,26 @@
                                 </div>
                                 <span style="color: #9ca3af;">→</span>
                             </div>
+                            <div class="list-item" onclick="state.myCenterLangOpen = !state.myCenterLangOpen; render();">
+                                <div class="list-item-left">
+                                    <div class="list-icon" style="background: #334155; color: #00CED1;">🌐</div>
+                                    <span style="font-weight: 600;">Languages</span>
+                                </div>
+                                <span style="color: #9ca3af;">${state.myCenterLangOpen ? '▲' : '▼'}</span>
+                            </div>
+                            ${state.myCenterLangOpen ? `
+                                <div style="background: #0f172a; border-radius: 12px; margin-top: 4px; margin-bottom: 8px; overflow: hidden;">
+                                    ${languages.map(lang => `
+                                        <div onclick="changeLanguage('${lang.name}')" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #1e293b; transition: background 0.2s;" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='transparent'">
+                                            <span style="font-size: 20px;">${lang.icon}</span>
+                                            <span style="color: #ffffff; font-size: 14px;">${lang.name}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
                         </div>
 
-                        <button class="btn" onclick="logout()" style="margin-top: 20px;">Logout</button>
+                        <button class="btn" onclick="logout()" style="margin-top: 20px; background: linear-gradient(135deg, #dc2626, #b91c1c);">🚪 Logout</button>
                     </div>
                 </div>
             `;
@@ -6445,7 +6411,7 @@
                             </svg>
                             Orion Music
                         </div>
-                        <h1>Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
+                        <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -1px; line-height: 1.1;">Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
                         <p>Shape the future <span style="color: #87CEEB;">of</span> music.</p>
                     </div>
                     
@@ -7049,165 +7015,6 @@
             `;
         }
 
-        // Lucky Draw Page
-        function renderLuckyDraw() {
-            const prizes = [
-                { emoji: '💎', label: 'Diamond', color: '#fef3c7' },
-                { emoji: '🎁', label: 'Gift', color: '#fed7aa' },
-                { emoji: '⭐', label: 'Star', color: '#fdba74' },
-                { emoji: '💰', label: 'Cash', color: '#fb923c' },
-                { emoji: '🏆', label: 'Trophy', color: '#00CED1' },
-                { emoji: '🎉', label: 'Bonus', color: '#00ACC1' },
-                { emoji: '🌟', label: 'Super', color: '#c2410c' },
-                { emoji: '💫', label: 'Mega', color: '#9a3412' }
-            ];
-
-            return `
-                <div class="page" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh;">
-                    <div class="header" style="background: transparent;">
-                        <button class="back-btn" onclick="navigateTo('home')">←</button>
-                        <h1>🎰 Lucky Draw</h1>
-                        <div style="width: 24px;"></div>
-                    </div>
-
-                    <div class="content-box" style="padding-bottom: 120px;">
-                        <!-- Header Banner -->
-                        <div style="background: linear-gradient(135deg, #00CED1, #00ACC1); border-radius: 20px; padding: 24px; margin-bottom: 32px; text-align: center; color: white; box-shadow: 0 10px 30px rgba(0, 206, 209, 0.3);">
-                            <div style="font-size: 48px; margin-bottom: 12px;">🎰</div>
-                            <h2 style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">Spin & Win Big!</h2>
-                            <p style="font-size: 16px; opacity: 0.9;">Try your luck and win amazing prizes</p>
-                        </div>
-
-                        <!-- Stats Cards -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
-                            <div style="background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid rgba(0, 206, 209, 0.3); border-radius: 16px; padding: 20px; text-align: center;">
-                                <div style="font-size: 32px; margin-bottom: 8px;">🎟️</div>
-                                <div style="font-size: 28px; font-weight: bold; color: #00CED1; margin-bottom: 4px;">0</div>
-                                <div style="font-size: 14px; color: #9ca3af;">Spins Available</div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid rgba(0, 206, 209, 0.3); border-radius: 16px; padding: 20px; text-align: center;">
-                                <div style="font-size: 32px; margin-bottom: 8px;">🏆</div>
-                                <div style="font-size: 28px; font-weight: bold; color: #10b981; margin-bottom: 4px;">0</div>
-                                <div style="font-size: 14px; color: #9ca3af;">Total Wins</div>
-                            </div>
-                        </div>
-
-                        <!-- Lucky Wheel -->
-                        <div style="background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid rgba(0, 206, 209, 0.3); border-radius: 24px; padding: 40px 20px; margin-bottom: 32px; position: relative; overflow: hidden;">
-                            <!-- Decorative background elements -->
-                            <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0, 206, 209, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
-                            <div style="position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(0, 206, 209, 0.1) 0%, transparent 70%); border-radius: 50%;"></div>
-                            
-                            <div style="position: relative; z-index: 1;">
-                                <!-- Wheel Container -->
-                                <div class="lucky-wheel-container" style="margin-bottom: 40px;">
-                                    <div class="wheel-pointer"></div>
-                                    <div class="lucky-wheel" id="luckyWheel">
-                                        ${prizes.map((prize, index) => {
-                                            const angle = (360 / prizes.length) * index;
-                                            return `
-                                                <div class="wheel-segment" style="transform: rotate(${angle}deg); color: ${index % 2 === 0 ? '#94a3b8' : 'white'};">
-                                                    <span style="transform: translateX(60%) rotate(${22.5}deg); font-size: 36px;">${prize.emoji}</span>
-                                                </div>
-                                            `;
-                                        }).join('')}
-                                        <div class="wheel-center">🎰</div>
-                                    </div>
-                                </div>
-
-                                <!-- Spin Button -->
-                                <div style="text-align: center;">
-                                    <button class="spin-button" id="spinButton" onclick="spinWheel()" disabled>
-                                        <span style="font-size: 28px; margin-right: 8px;">🎰</span>
-                                        SPIN NOW
-                                    </button>
-                                    <p style="color: #9ca3af; font-size: 14px; margin-top: 16px;">You need spin tickets to play</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- How to Get Spins -->
-                        <div style="background: linear-gradient(135deg, #334155, #475569); border-radius: 20px; padding: 24px; margin-bottom: 32px; border: 2px solid #f59e0b;">
-                            <h3 style="color: #fbbf24; font-size: 20px; font-weight: bold; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">💡</span>
-                                How to Get Spin Tickets?
-                            </h3>
-                            <div style="color: #a16207; font-size: 15px; line-height: 1.8;">
-                                <div style="margin-bottom: 12px; display: flex; align-items: start; gap: 12px;">
-                                    <span style="font-size: 20px;">🎯</span>
-                                    <span><strong>Complete Tasks:</strong> Earn 1 spin for every 5 tasks completed</span>
-                                </div>
-                                <div style="margin-bottom: 12px; display: flex; align-items: start; gap: 12px;">
-                                    <span style="font-size: 20px;">💳</span>
-                                    <span><strong>Make Deposits:</strong> Get bonus spins with deposits</span>
-                                </div>
-                                <div style="margin-bottom: 12px; display: flex; align-items: start; gap: 12px;">
-                                    <span style="font-size: 20px;">👥</span>
-                                    <span><strong>Invite Friends:</strong> Receive spins for each referral</span>
-                                </div>
-                                <div style="display: flex; align-items: start; gap: 12px;">
-                                    <span style="font-size: 20px;">🎉</span>
-                                    <span><strong>Daily Bonus:</strong> Login daily for free spins</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Winners -->
-                        <div style="background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid rgba(0, 206, 209, 0.3); border-radius: 20px; padding: 24px; margin-bottom: 32px;">
-                            <h3 style="color: white; font-size: 20px; font-weight: bold; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">🏆</span>
-                                Recent Winners
-                            </h3>
-                            <div style="color: #9ca3af; text-align: center; padding: 40px 20px;">
-                                <div style="font-size: 48px; margin-bottom: 12px;">🎰</div>
-                                <p style="font-size: 16px;">No winners yet!</p>
-                                <p style="font-size: 14px; margin-top: 8px; opacity: 0.8;">Be the first to win big</p>
-                            </div>
-                        </div>
-
-                        <!-- Prize Pool -->
-                        <div style="background: linear-gradient(135deg, #1e293b, #334155); border: 1px solid rgba(0, 206, 209, 0.3); border-radius: 20px; padding: 24px;">
-                            <h3 style="color: white; font-size: 20px; font-weight: bold; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 24px;">🎁</span>
-                                Prize Pool
-                            </h3>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                                ${prizes.map(prize => `
-                                    <div style="background: rgba(0, 206, 209, 0.1); border: 1px solid rgba(0, 206, 209, 0.3); border-radius: 12px; padding: 16px; text-align: center;">
-                                        <div style="font-size: 40px; margin-bottom: 8px;">${prize.emoji}</div>
-                                        <div style="color: white; font-weight: bold; font-size: 14px;">${prize.label}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    ${renderBottomNav()}
-                </div>
-            `;
-        }
-
-        function spinWheel() {
-            // This function will be implemented later with logic
-            const wheel = document.getElementById('luckyWheel');
-            const button = document.getElementById('spinButton');
-            
-            if (!wheel || !button) return;
-            
-            // Disable button during spin
-            button.disabled = true;
-            
-            // Add spinning animation
-            wheel.classList.add('spinning');
-            
-            // Remove animation after completion
-            setTimeout(() => {
-                wheel.classList.remove('spinning');
-                button.disabled = false;
-                // Show result (placeholder)
-                showToast('🎰 Spin complete! Logic coming soon...', 'info');
-            }, 4000);
-        }
-
         // Main Render
         let renderTimeout = null;
         let lastModalState = { negative: false, triggered: false };
@@ -7253,8 +7060,6 @@
                     content = renderWithdraw();
                 } else if (state.currentPage === 'paymentMethods') {
                     content = renderPaymentMethods();
-                } else if (state.currentPage === 'luckyDraw') {
-                    content = renderLuckyDraw();
                 } else {
                     content = renderSimplePage(state.currentPage);
                 }
