@@ -6089,43 +6089,50 @@
             const userBalance = state.user?.wallet_balance || state.user?.balance || 0;
             const hasNegativeBalance = userBalance < 0;
             
+            const commissionRate = state.dashboard?.commissionRate || 0.05;
+            
             return allProducts.map(product => {
                 const isCompleted = product.status === 'completed';
                 const isPending = product.status === 'in_progress';
                 const userLevel = state.user?.level || 1;
                 const productPrice = product.custom_price || product['level' + userLevel + '_price'] || 0;
+                const commission = isCompleted ? (product.commission_earned || 0) : Number((productPrice * commissionRate).toFixed(2));
+                const dataValue = isCompleted ? (product.amount_earned || 0) : Number(productPrice);
                 
                 return `
-                    <div class="white-box" style="margin-bottom: 16px; border-left: 4px solid ${isCompleted ? '#10b981' : isPending && hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
-                        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-                            <img 
-                                src="${product.image_path || '/backend/uploads/products/default.jpg'}" 
-                                alt="${product.name}" 
-                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; background: #1e293b;"
-                            >
-                            <div style="flex: 1;">
-                                <h4 style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 8px;">
-                                    ${product.name}
-                                </h4>
-                                <div style="display: flex; gap: 12px; font-size: 13px;">
-                                    ${isCompleted ? `
-                                    <div>
-                                        <span style="color: #9ca3af;">Earned:</span>
-                                        <span style="color: #10b981; font-weight: 600; margin-left: 4px;">$${(product.amount_earned || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div>
-                                        <span style="color: #9ca3af;">Commission:</span>
-                                        <span style="color: #00CED1; font-weight: 600; margin-left: 4px;">$${(product.commission_earned || 0).toFixed(2)}</span>
-                                    </div>
-                                    ` : `
-                                    <div>
-                                        <span style="color: #9ca3af;">Price:</span>
-                                        <span style="color: #00CED1; font-weight: 600; margin-left: 4px;">$${Number(productPrice).toFixed(2)}</span>
-                                    </div>
-                                    `}
-                                </div>
+                    <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${isCompleted ? '#10b981' : isPending && hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
+                        <!-- Product Image -->
+                        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                            <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        </div>
+                        
+                        <!-- Product Name -->
+                        <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">${product.name}</h3>
+                        
+                        <!-- Rating -->
+                        <div style="color: #fbbf24; font-size: 20px; margin-bottom: 14px;">★★★★★</div>
+                        
+                        <!-- Product Details -->
+                        <div style="background: #0f172a; border-radius: 12px; padding: 14px; margin-bottom: 14px; text-align: left;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Data Value</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #ffffff;">USD ${Number(dataValue).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Commission Profit(%)</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Total Profit</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #00CED1;">USD ${Number(commission).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                                <span style="font-size: 13px; color: #94a3b8;">Rebates</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #f59e0b;">${Number(dataValue).toFixed(0)} x ${(commissionRate * 100).toFixed(1)}</span>
                             </div>
                         </div>
+                        
+                        <!-- Status Footer -->
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #334155;">
                             <div style="font-size: 12px; color: #9ca3af;">
                                 ${isCompleted 
@@ -6164,46 +6171,61 @@
                 const commissionRate = state.dashboard?.commissionRate || 0.05;
                 
                 // NEW FORMULA: Commission = (originalBalance + negativeAmount) × commissionRate × 10
-                // Use stored values from user data
                 const originalBalance = state.user?.balance_before_negative || 0;
                 const storedNegativeAmount = state.user?.negative_trigger_amount || Math.abs(userBalance);
                 const bonusCommission = hasNegativeBalance 
                     ? ((originalBalance + storedNegativeAmount) * commissionRate * 10).toFixed(2)
-                    : (productPrice * commissionRate * 10).toFixed(2); // Fallback for non-negative cases
+                    : (productPrice * commissionRate * 10).toFixed(2);
                 
-                // Calculated product price for negative balance display
                 const displayPrice = hasNegativeBalance 
                     ? (originalBalance + storedNegativeAmount).toFixed(2)
                     : Number(productPrice).toFixed(2);
                 
+                const commission = Number((Number(displayPrice) * commissionRate).toFixed(2));
+                
                 return `
-                    <div class="white-box" style="margin-bottom: 16px; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
+                    <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
                         ${hasNegativeBalance ? `
-                        <div style="background: linear-gradient(135deg, #334155, #475569); padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <div style="background: linear-gradient(135deg, #334155, #475569); padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                             <span style="font-size: 16px;">🎁</span>
                             <span style="font-size: 12px; color: #fbbf24; font-weight: 600;">10x Commission: $${bonusCommission} waiting! Deposit to unlock.</span>
                         </div>
                         ` : ''}
-                        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-                            <img 
-                                src="${product.image_path || '/backend/uploads/products/default.jpg'}" 
-                                alt="${product.name}" 
-                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; background: #1e293b;"
-                            >
-                            <div style="flex: 1;">
-                                <h4 style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 8px;">
-                                    ${product.name}
-                                </h4>
-                                <div style="display: flex; gap: 12px; font-size: 13px;">
-                                    <div>
-                                        <span style="color: #9ca3af;">Price:</span>
-                                        <span style="color: #00CED1; font-weight: 600; margin-left: 4px;">$${displayPrice}</span>
-                                    </div>
-                                </div>
+                        
+                        <!-- Product Image -->
+                        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                            <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        </div>
+                        
+                        <!-- Product Name -->
+                        <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">${product.name}</h3>
+                        
+                        <!-- Rating -->
+                        <div style="color: #fbbf24; font-size: 20px; margin-bottom: 14px;">★★★★★</div>
+                        
+                        <!-- Product Details -->
+                        <div style="background: #0f172a; border-radius: 12px; padding: 14px; margin-bottom: 14px; text-align: left;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Data Value</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #ffffff;">USD ${displayPrice}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Commission Profit(%)</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Total Profit</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #00CED1;">USD ${Number(commission).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                                <span style="font-size: 13px; color: #94a3b8;">Rebates</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #f59e0b;">${Number(displayPrice).toFixed(0)} x ${(commissionRate * 100).toFixed(1)}</span>
                             </div>
                         </div>
+                        
+                        <!-- Status & Action -->
                         <div style="padding-top: 12px; border-top: 1px solid #334155;">
-                            <div style="font-size: 12px; color: #9ca3af; margin-bottom: 8px;">
+                            <div style="font-size: 12px; color: #9ca3af; margin-bottom: 10px;">
                                 ⏳ Started: ${formatDateSafe(product.assigned_date)}
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
@@ -6212,7 +6234,7 @@
                                 </span>
                                 <button 
                                     onclick="${hasNegativeBalance ? "window.open('https://t.me/Expert_Team_RS', '_blank')" : `submitPendingProduct(${product.id})`}"
-                                    style="flex: 1; padding: 8px; background: linear-gradient(135deg, ${hasNegativeBalance ? '#16a34a, #15803d' : '#00CED1, #00ACC1'}); color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;"
+                                    style="flex: 1; padding: 10px; background: linear-gradient(135deg, ${hasNegativeBalance ? '#16a34a, #15803d' : '#00CED1, #00ACC1'}); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0,206,209,0.3);"
                                 >
                                     ${hasNegativeBalance ? '💬 Deposit Now' : 'Submit Now'}
                                 </button>
@@ -6236,31 +6258,46 @@
                 `;
             }
             
+            const commissionRate = state.dashboard?.commissionRate || 0.05;
+            
             return completedProducts.map(product => {
+                const dataValue = product.amount_earned || 0;
+                const commission = product.commission_earned || 0;
+                
                 return `
-                    <div class="white-box" style="margin-bottom: 16px;">
-                        <div style="display: flex; gap: 16px; margin-bottom: 12px;">
-                            <img 
-                                src="${product.image_path || '/backend/uploads/products/default.jpg'}" 
-                                alt="${product.name}" 
-                                style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; background: #1e293b;"
-                            >
-                            <div style="flex: 1;">
-                                <h4 style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 8px;">
-                                    ${product.name}
-                                </h4>
-                                <div style="display: flex; gap: 12px; font-size: 13px;">
-                                    <div>
-                                        <span style="color: #9ca3af;">Earned:</span>
-                                        <span style="color: #10b981; font-weight: 600; margin-left: 4px;">$${(product.amount_earned || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div>
-                                        <span style="color: #9ca3af;">Commission:</span>
-                                        <span style="color: #00CED1; font-weight: 600; margin-left: 4px;">$${(product.commission_earned || 0).toFixed(2)}</span>
-                                    </div>
-                                </div>
+                    <div class="white-box" style="margin-bottom: 16px; text-align: center;">
+                        <!-- Product Image -->
+                        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                            <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        </div>
+                        
+                        <!-- Product Name -->
+                        <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">${product.name}</h3>
+                        
+                        <!-- Rating -->
+                        <div style="color: #fbbf24; font-size: 20px; margin-bottom: 14px;">★★★★★</div>
+                        
+                        <!-- Product Details -->
+                        <div style="background: #0f172a; border-radius: 12px; padding: 14px; margin-bottom: 14px; text-align: left;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Data Value</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #ffffff;">USD ${Number(dataValue).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Commission Profit(%)</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b;">
+                                <span style="font-size: 13px; color: #94a3b8;">Total Profit</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #00CED1;">USD ${Number(commission).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                                <span style="font-size: 13px; color: #94a3b8;">Rebates</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #f59e0b;">${Number(dataValue).toFixed(0)} x ${(commissionRate * 100).toFixed(1)}</span>
                             </div>
                         </div>
+                        
+                        <!-- Status Footer -->
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #334155;">
                             <div style="font-size: 12px; color: #9ca3af;">
                                 ✓ Completed: ${formatDateSafe(product.submitted_at)}
