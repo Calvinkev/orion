@@ -1510,7 +1510,7 @@ async function assignProductsToAllUsers(productIds = null) {
   let totalAssignments = 0;
 
   for (const user of users) {
-    // Level-based task limits: L1=80, L2=90, L3=100, L4=110, L5=120
+    // Level-based task limits: L1=135 (3x45), L2=150 (3x50), L3=165 (3x55), L4=180 (3x60)
     const taskLimits = getTaskLimitsForLevel(user.level || 1);
     const tasksPerDay = taskLimits.total;
     
@@ -3844,6 +3844,7 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
       await conn.rollback();
       return res.status(403).json({
         error: 'SET_1_COMPLETE',
+        errorCode: 'SET_1_COMPLETE',
         message: `You have completed Set 1 (${taskLimits.perSet} tasks). Please contact customer care to reset or upgrade your level to continue.`,
         tasksCompleted: tasksCompletedToday,
         currentSet: currentSet,
@@ -3852,11 +3853,26 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
       });
     }
     
-    // Set 2 complete - all done for the day
+    // Set 2 complete - need to contact customer care for Set 3
     if (currentSet === 2 && tasksCompletedToday >= taskLimits.perSet) {
       await conn.rollback();
       return res.status(403).json({
         error: 'SET_2_COMPLETE',
+        errorCode: 'SET_2_COMPLETE',
+        message: `You have completed Set 2 (${taskLimits.perSet} tasks). Please contact customer care to continue to Set 3.`,
+        tasksCompleted: tasksCompletedToday,
+        currentSet: currentSet,
+        tasksPerSet: taskLimits.perSet,
+        requiresAction: true
+      });
+    }
+
+    // Set 3 complete - all done for the day
+    if (currentSet === 3 && tasksCompletedToday >= taskLimits.perSet) {
+      await conn.rollback();
+      return res.status(403).json({
+        error: 'SET_3_COMPLETE',
+        errorCode: 'SET_3_COMPLETE',
         message: `Congratulations! You have completed all ${taskLimits.total} tasks for today. Come back tomorrow!`,
         tasksCompleted: tasksCompletedToday,
         currentSet: currentSet,
@@ -4031,6 +4047,7 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
       await conn.rollback();
       return res.status(403).json({ 
         error: 'SET_1_COMPLETE',
+        errorCode: 'SET_1_COMPLETE',
         message: `You have completed Set 1 (${tasksPerSet} tasks). Please contact customer care to reset or upgrade your level to continue.`,
         tasksCompleted: currentTasksCompleted,
         currentSet: userCurrentSet,
@@ -4359,8 +4376,8 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
 
     await conn.commit();
     
-    // Check if user just completed Set 1 (needs to contact customer care)
-    const justCompletedSet1 = (currentSet === 1 && newTasksCompleted === taskLimits.perSet);
+    // Check if user just completed their current set (needs to contact customer care for next set)
+    const justCompletedSet = (currentSet < 3 && newTasksCompleted === taskLimits.perSet);
     
     res.json({ 
       success: true,
@@ -4372,7 +4389,7 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
       currentSet: currentSet,
       tasksPerSet: taskLimits.perSet,
       totalTasksPerDay: taskLimits.total,
-      setComplete: justCompletedSet1,
+      setComplete: justCompletedSet,
       breakdown: {
         productCost: productCost,
         refunded: productCost,

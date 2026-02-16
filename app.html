@@ -2905,10 +2905,11 @@
                 // Update current set and tasks from user data (set by admin)
                 state.currentSet = data.user.current_set || 1;
                 state.tasksCompletedToday = data.user.tasks_completed_today || 0;
-                // Clear Set 1 completion modal if admin reset user to Set 2
-                if (state.currentSet === 2 && state.showSetCompleteModal) {
+                // Clear set completion modal if admin reset user to next set
+                if (state.showSetCompleteModal && state.currentSet > (state._lastKnownSet || 1)) {
                     state.showSetCompleteModal = false;
                 }
+                state._lastKnownSet = state.currentSet;
                 console.log('[DASHBOARD] Updated state - currentSet:', state.currentSet, 'tasksCompletedToday:', state.tasksCompletedToday);
                 
                 // Load history and level progress for records page
@@ -3969,8 +3970,16 @@
                     return;
                 }
                 
-                // If in Set 2 and already completed Set 2's tasks (i.e., total tasks reached), show All Tasks Complete
+                // If in Set 2 and already completed Set 2's tasks, show the Set Complete modal (contact customer care for Set 3)
                 if (currentSet === 2 && tasksCompletedToday >= taskLimits.perSet) {
+                    state.loadingProducts = false;
+                    state.showSetCompleteModal = true;
+                    render();
+                    return;
+                }
+
+                // If in Set 3 and already completed Set 3's tasks, show All Tasks Complete
+                if (currentSet === 3 && tasksCompletedToday >= taskLimits.perSet) {
                     state.loadingProducts = false;
                     showModal('All Tasks Complete!', `Congratulations! You have completed all ${taskLimits.total} tasks for today.`, 'success', 'OK');
                     return;
@@ -4210,6 +4219,9 @@
                     showSetCompleteModal();
                     // Don't render again - showSetCompleteModal already renders
                 } else if (error.errorCode === 'SET_2_COMPLETE' || error.error === 'SET_2_COMPLETE') {
+                    showSetCompleteModal();
+                    // Don't render again - showSetCompleteModal already renders
+                } else if (error.errorCode === 'SET_3_COMPLETE' || error.error === 'SET_3_COMPLETE') {
                     const userLevel = state.user?.level || 1;
                     const totalTasks = getTaskLimitsForLevel(userLevel).total;
                     showModal(
@@ -4380,6 +4392,8 @@
                 if (error.errorCode === 'SET_1_COMPLETE') {
                     showSetCompleteModal();
                 } else if (error.errorCode === 'SET_2_COMPLETE' || error.error === 'SET_2_COMPLETE') {
+                    showSetCompleteModal();
+                } else if (error.errorCode === 'SET_3_COMPLETE' || error.error === 'SET_3_COMPLETE') {
                     const userLevel = state.user?.level || 1;
                     const totalTasks = getTaskLimitsForLevel(userLevel).total;
                     showModal(

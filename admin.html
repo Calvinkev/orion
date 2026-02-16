@@ -1053,7 +1053,11 @@
         }
 
         async function resetUserTasks(userId) {
-            if (!confirm('Reset tasks for this user? They will be able to continue to Set 2 (tasks 31-60).')) {
+            // Find user to get current set info
+            const user = adminState.users.find(u => u.id === userId);
+            const currentSet = user ? (user.current_set || 1) : 1;
+            const nextSet = Math.min(currentSet + 1, 3);
+            if (!confirm(`Reset tasks for this user? They will be able to continue to Set ${nextSet}.`)) {
                 return;
             }
             
@@ -1072,7 +1076,7 @@
                     const err = await resp.json().catch(() => ({}));
                     throw new Error(err.error || 'Failed to reset tasks');
                 }
-                alert('Tasks reset! User can now continue to Set 2.');
+                alert(`Tasks reset! User can now continue to Set ${nextSet}.`);
                 closeModal();
                 loadUsers();
             } catch (e) {
@@ -1090,8 +1094,8 @@
                 return;
             }
             
-            if (parseInt(setNumber) < 1 || parseInt(setNumber) > 2) {
-                alert('Set number must be 1 or 2');
+            if (parseInt(setNumber) < 1 || parseInt(setNumber) > 3) {
+                alert('Set number must be 1, 2 or 3');
                 return;
             }
             
@@ -1472,20 +1476,22 @@
                                 const isActive = user.last_seen && (new Date() - new Date(user.last_seen)) < 5 * 60 * 1000;
                                 // Get level settings for this user
                                 const levelSetting = adminState.levelSettings.find(l => l.level === user.level) || {};
-                                const perSet = Number(levelSetting.daily_task_limit) ? Math.floor(Number(levelSetting.daily_task_limit) / 2) : 0;
+                                const perSet = Number(levelSetting.daily_task_limit) ? Math.floor(Number(levelSetting.daily_task_limit) / 3) : 0;
                                 const totalLimit = Number(levelSetting.daily_task_limit) || 0;
                                 // Calculate set progress and total today
                                 let setProgress = '';
-                                let totalToday = user.tasks_completed_today || 0;
-                                if (user.current_set === 2) {
-                                    setProgress = `${Math.max(0, totalToday - perSet)}/${perSet}`;
-                                } else {
-                                    setProgress = `${Math.min(totalToday, perSet)}/${perSet}`;
-                                }
+                                const currentSet = user.current_set || 1;
+                                const tasksInSet = user.tasks_completed_today || 0;
+                                setProgress = `${Math.min(tasksInSet, perSet)}/${perSet}`;
+                                // Total today = completed sets * perSet + current set progress
+                                let totalToday = (currentSet - 1) * perSet + tasksInSet;
                                 // Cap total today at totalLimit
                                 totalToday = Math.min(totalToday, totalLimit);
-                                // Block further submissions if finished all tasks
-                                const canSubmit = user.current_set < 2 || (user.current_set === 2 && (totalToday - perSet) < perSet);
+                                // Block further submissions if finished all 3 sets
+                                const allSetsComplete = (currentSet === 3 && tasksInSet >= perSet);
+                                const currentSetComplete = (tasksInSet >= perSet);
+                                const statusColor = allSetsComplete ? '#dc2626' : (currentSetComplete ? '#f59e0b' : '#16a34a');
+                                const statusText = allSetsComplete ? 'All Sets Done' : (currentSetComplete ? `Needs Reset → Set ${currentSet + 1}` : 'Can Submit');
                                 return `
                                 <tr>
                                     <td>
@@ -1504,13 +1510,13 @@
                                     <td>${user.wallet_balance.toFixed(2)}</td>
                                     <td>${user.commission_earned.toFixed(2)}</td>
                                     <td>
-                                        Set Progress: <b>${setProgress}</b><br>
+                                        Set ${currentSet}/3: <b>${setProgress}</b><br>
                                         Total Today: <b>${totalToday}/${totalLimit}</b><br>
-                                        <span style="color:${canSubmit ? '#16a34a' : '#dc2626'};font-weight:600;">${canSubmit ? 'Can Submit' : 'Blocked'}</span>
+                                        <span style="color:${statusColor};font-weight:600;">${statusText}</span>
                                     </td>
                                     <td><span class="status-badge ${user.status}">${user.status}</span></td>
                                     <td>
-                                        <button class="action-btn primary" data-action="manage-user" data-user-id="${user.id}" ${canSubmit ? '' : 'disabled'}>Manage</button>
+                                        <button class="action-btn primary" data-action="manage-user" data-user-id="${user.id}">Manage</button>
                                     </td>
                                 </tr>
                             `}).join('')}
@@ -1955,25 +1961,26 @@
                                     <p style="font-size: 13px; color: #92400e; margin-bottom: 12px;">
                                         ${(() => {
                                             const level = item.level || 1;
-                                            // Match backend limits: {1: {total: 80, perSet: 40}, 2: {total: 90, perSet: 45}, 3: {total: 100, perSet: 50}, 4: {total: 110, perSet: 55}, 5: {total: 120, perSet: 60}}
-                                            const limits = {1: {total: 80, perSet: 40}, 2: {total: 90, perSet: 45}, 3: {total: 100, perSet: 50}, 4: {total: 110, perSet: 55}, 5: {total: 120, perSet: 60}};
+                                            // Match backend limits: {1: {total: 135, perSet: 45}, 2: {total: 150, perSet: 50}, 3: {total: 165, perSet: 55}, 4: {total: 180, perSet: 60}}
+                                            const limits = {1: {total: 135, perSet: 45}, 2: {total: 150, perSet: 50}, 3: {total: 165, perSet: 55}, 4: {total: 180, perSet: 60}};
                                             const taskLimits = limits[level] || limits[1];
                                             const currentSet = item.current_set || 1;
                                             const tasksToday = item.tasks_completed_today || 0;
                                             // tasks_completed_today represents tasks in the CURRENT set
                                             // When in Set 1: tasks_completed_today = Set 1 progress
                                             // When in Set 2: tasks_completed_today = Set 2 progress (was reset to 0 when moved to Set 2)
+                                            // When in Set 3: tasks_completed_today = Set 3 progress (was reset to 0 when moved to Set 3)
                                             const tasksInSet = tasksToday;
-                                            // Total today = Set 1 tasks (if completed) + current set progress
-                                            const totalToday = currentSet === 2 ? taskLimits.perSet + tasksToday : tasksToday;
-                                            return `<strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #00CED1;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}) | Total Today: ${totalToday}/${taskLimits.total}`;
+                                            // Total today = completed sets * perSet + current set progress
+                                            const totalToday = (currentSet - 1) * taskLimits.perSet + tasksToday;
+                                            return `<strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #00CED1;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}/3) | Total Today: ${totalToday}/${taskLimits.total}`;
                                         })()}
                                     </p>
-                                    <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%;" onclick="resetUserTasks(${item.id})">
-                                        🔄 Reset Tasks (Allow Set 2)
+                                    <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%;" onclick="resetUserTasks(${item.id})" ${currentSet >= 3 && tasksToday >= taskLimits.perSet ? 'disabled title="User has completed all 3 sets"' : ''}>
+                                        🔄 Reset Tasks (Allow Set ${Math.min(currentSet + 1, 3)})
                                     </button>
                                     <p style="font-size: 11px; color: #92400e; margin-top: 8px;">
-                                        Use this when user completes Set 1 and needs to continue to Set 2.
+                                        Use this when user completes Set ${currentSet} and needs to continue to Set ${Math.min(currentSet + 1, 3)}.
                                     </p>
                                 </div>
                                 <div style="background: #fce7f3; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
@@ -1988,7 +1995,7 @@
                                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
                                         <div class="form-group" style="margin-bottom: 0;">
                                             <label style="font-size: 11px;">Set Number</label>
-                                            <input type="number" id="negBalSet_${item.id}" min="1" max="2" placeholder="1 or 2" value="${item.negative_balance_set || ''}">
+                                            <input type="number" id="negBalSet_${item.id}" min="1" max="3" placeholder="1, 2 or 3" value="${item.negative_balance_set || ''}">
                                         </div>
                                         <div class="form-group" style="margin-bottom: 0;">
                                             <label style="font-size: 11px;">Submission #</label>
