@@ -62,6 +62,14 @@
             gap: 10px;
         }
 
+        .logo img {
+            height: 36px;
+            width: 36px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex: 0 0 auto;
+        }
+
         .nav-links {
             display: flex;
             gap: 30px;
@@ -130,7 +138,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(0, 191, 255, 0.15) 0%, transparent 50%);
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0.7) 100%), url('/uploads/logos/land.jpg') center/cover no-repeat;
             animation: pulse 8s ease-in-out infinite;
         }
 
@@ -927,7 +935,10 @@
     <!-- Navigation -->
     <nav id="navbar">
         <div class="nav-container">
-            <div class="logo">🎵 ORION</div>
+            <div class="logo">
+                <img src="/uploads/logos/logo.jpg" alt="Orion logo">
+                <span>ORION</span>
+            </div>
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#about">About</a></li>
