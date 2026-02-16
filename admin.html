@@ -739,6 +739,76 @@
             }
         }
 
+        async function adminGenerateInviteCode(userId) {
+            try {
+                // Force regeneration: first clear the existing code, then generate new
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/generate-invite-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId, forceRegenerate: true })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to generate invite code');
+                
+                // Update the display
+                const codeEl = document.getElementById(`userInviteCode_${userId}`);
+                if (codeEl) codeEl.textContent = data.inviteCode;
+                
+                // Update adminState so modal re-renders correctly
+                const user = adminState.users.find(u => u.id == userId);
+                if (user) user.invite_code = data.inviteCode;
+                if (adminState.selectedItem && adminState.selectedItem.id == userId) {
+                    adminState.selectedItem.invite_code = data.inviteCode;
+                }
+                
+                alert(`Invite code generated: ${data.inviteCode}`);
+                render();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function adminSetCustomInviteCode(userId) {
+            const input = document.getElementById(`customInviteCode_${userId}`);
+            const code = input ? input.value.trim().toUpperCase() : '';
+            if (!code) return alert('Please enter a custom invite code');
+            if (code.length < 2 || code.length > 20 || !/^[A-Z0-9]+$/.test(code)) {
+                return alert('Invite code must be 2-20 alphanumeric characters');
+            }
+            
+            try {
+                const response = await fetch(`${window.RANKSCIENCE_API_BASE_URL}/api/admin/set-invite-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId, inviteCode: code })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to set invite code');
+                
+                // Update the display
+                const codeEl = document.getElementById(`userInviteCode_${userId}`);
+                if (codeEl) codeEl.textContent = data.inviteCode;
+                
+                // Update adminState
+                const user = adminState.users.find(u => u.id == userId);
+                if (user) user.invite_code = data.inviteCode;
+                if (adminState.selectedItem && adminState.selectedItem.id == userId) {
+                    adminState.selectedItem.invite_code = data.inviteCode;
+                }
+                
+                alert(`Invite code set to: ${data.inviteCode}`);
+                render();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
         async function deleteUserAccount(userId, username) {
             const confirmMessage = `Are you sure you want to permanently delete the account for "${username}"?\n\nThis will delete:\n• User account\n• All balance history\n• All assigned products\n• All notifications\n• All chat messages\n• All withdrawal requests\n\nThis action CANNOT be undone!`;
             
@@ -1899,6 +1969,30 @@
                                     <div class="info-row">
                                         <span class="info-label">Wallet Address</span>
                                         <span class="info-value" style="font-family: monospace;">${item.wallet_address || '-'}</span>
+                                    </div>
+                                </div>
+                                <div style="background: #ecfdf5; padding: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #a7f3d0;">
+                                    <h4 style="margin-bottom: 12px; color: #065f46;">🔗 Invitation Code</h4>
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                        <div style="flex: 1; background: white; padding: 10px 16px; border-radius: 8px; border: 1px solid #d1fae5; font-family: monospace; font-size: 18px; font-weight: 700; color: #059669; letter-spacing: 2px;" id="userInviteCode_${item.id}">
+                                            ${item.invite_code || 'No code assigned'}
+                                        </div>
+                                        ${item.invite_code ? `
+                                            <button class="btn btn-secondary" style="white-space: nowrap;" onclick="navigator.clipboard.writeText('${item.invite_code}').then(() => alert('Copied: ${item.invite_code}'))">📋 Copy</button>
+                                        ` : ''}
+                                    </div>
+                                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                        <button class="btn" style="flex: 1; background: #059669;" onclick="adminGenerateInviteCode(${item.id})">
+                                            ${item.invite_code ? '🔄 Regenerate Code' : '✨ Generate Code'}
+                                        </button>
+                                    </div>
+                                    <div style="border-top: 1px solid #a7f3d0; padding-top: 12px;">
+                                        <p style="font-size: 12px; color: #065f46; margin-bottom: 8px;">Set a custom invite code:</p>
+                                        <div style="display: flex; gap: 8px;">
+                                            <input type="text" id="customInviteCode_${item.id}" placeholder="e.g. ORION1" style="flex: 1; text-transform: uppercase; font-family: monospace; letter-spacing: 1px;" maxlength="20">
+                                            <button class="btn btn-secondary" onclick="adminSetCustomInviteCode(${item.id})">Set Code</button>
+                                        </div>
+                                        <p style="font-size: 11px; color: #6b7280; margin-top: 4px;">2-20 alphanumeric characters. This is the code others use to register.</p>
                                     </div>
                                 </div>
                                 <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">

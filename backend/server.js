@@ -949,6 +949,13 @@ app.post('/api/auth/login', async (req, res) => {
       isAdmin: !!user.is_admin 
     }, process.env.JWT_SECRET || 'test-secret');
 
+    // Auto-generate invite code if user doesn't have one
+    if (!user.invite_code) {
+      const newCode = await generateUniqueInviteCode();
+      await pool.query('UPDATE users SET invite_code = ? WHERE id = ?', [newCode, user.id]);
+      user.invite_code = newCode;
+    }
+
     await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
 
     res.json({
@@ -2885,14 +2892,14 @@ app.post('/api/admin/reset-user-tasks', authMiddleware, adminMiddleware, async (
 // Generate invite code for a user (admin can create codes)
 app.post('/api/admin/generate-invite-code', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, forceRegenerate } = req.body;
     
     if (userId) {
       // Generate for specific user
       const [userRows] = await pool.query('SELECT invite_code FROM users WHERE id = ? LIMIT 1', [userId]);
       if (userRows.length === 0) return res.status(404).json({ error: 'User not found' });
       
-      if (!userRows[0].invite_code) {
+      if (!userRows[0].invite_code || forceRegenerate) {
         const newCode = await generateUniqueInviteCode();
         await pool.query('UPDATE users SET invite_code = ? WHERE id = ?', [newCode, userId]);
         res.json({ success: true, inviteCode: newCode });
@@ -2907,6 +2914,30 @@ app.post('/api/admin/generate-invite-code', authMiddleware, adminMiddleware, asy
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to generate invite code' });
+  }
+});
+
+// Set a custom invite code for a user (admin only)
+app.post('/api/admin/set-invite-code', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { userId, inviteCode } = req.body;
+    if (!userId || !inviteCode) return res.status(400).json({ error: 'User ID and invite code are required' });
+    
+    // Validate code format (2-20 chars, alphanumeric)
+    const code = inviteCode.trim().toUpperCase();
+    if (code.length < 2 || code.length > 20 || !/^[A-Z0-9]+$/.test(code)) {
+      return res.status(400).json({ error: 'Invite code must be 2-20 alphanumeric characters' });
+    }
+    
+    // Check if code already exists for another user
+    const [existing] = await pool.query('SELECT id FROM users WHERE invite_code = ? AND id != ? LIMIT 1', [code, userId]);
+    if (existing.length > 0) return res.status(400).json({ error: 'This invite code is already in use by another user' });
+    
+    await pool.query('UPDATE users SET invite_code = ? WHERE id = ?', [code, userId]);
+    res.json({ success: true, inviteCode: code });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to set invite code' });
   }
 });
 
@@ -3148,7 +3179,16 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ? LIMIT 1', [req.user.userId]);
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json({ user: sanitizeUser(rows[0]) });
+    
+    // Auto-generate invite code if user doesn't have one
+    const user = rows[0];
+    if (!user.invite_code) {
+      const newCode = await generateUniqueInviteCode();
+      await pool.query('UPDATE users SET invite_code = ? WHERE id = ?', [newCode, user.id]);
+      user.invite_code = newCode;
+    }
+    
+    res.json({ user: sanitizeUser(user) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch user' });
