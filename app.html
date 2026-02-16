@@ -1375,7 +1375,8 @@
             // Individual popup (vouchers sent to specific user)
             showIndividualPopup: false,
             individualPopup: null,
-            individualPopupChecked: false
+            individualPopupChecked: false,
+            brandingImages: {}
         };
 
         // Translations object for multi-language support
@@ -1938,6 +1939,28 @@
             }
         }
 
+        // Load branding images (logo, background, landing page hero)
+        async function loadBrandingImages() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/branding-images`);
+                if (response.ok) {
+                    state.brandingImages = await response.json();
+                    render(); // Re-render to apply branding
+                }
+            } catch (error) {
+                console.log('Branding images not loaded (using defaults)');
+            }
+        }
+
+        // Helper to get branding image URL or fallback
+        function getBrandingUrl(key) {
+            if (state.brandingImages && state.brandingImages[key]) {
+                const base = API_BASE_URL.replace(/\/api$/, '');
+                return base + state.brandingImages[key];
+            }
+            return null;
+        }
+
         // Load withdrawal history
         async function loadWithdrawalHistory() {
             try {
@@ -2321,6 +2344,9 @@
             
             // Load product images for the grid (public endpoint)
             loadProductImages();
+            
+            // Load branding images (logo, background, landing)
+            loadBrandingImages();
             
             try {
                 const token = localStorage.getItem('token');
@@ -4593,13 +4619,14 @@
 
         // Render Functions
         function renderLogin() {
+            const logoUrl = getBrandingUrl('logo');
             return `
                 <a href="index.html" class="official-website-btn">Official Website</a>
                 <div class="auth-page">
                     <!-- Left Panel - Brand -->
                     <div class="auth-brand">
                         <div class="auth-brand-logo">
-                            <img src="/uploads/logos/logo.jpg" alt="Orion logo">
+                            ${logoUrl ? `<img src="${logoUrl}" alt="Orion logo">` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
                             Orion Music
                         </div>
                         <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -1px; line-height: 1.1;">Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>
@@ -4653,19 +4680,21 @@
 
         function renderHome() {
             const user = state.user || {};
+            const logoUrl = getBrandingUrl('logo');
+            const backUrl = getBrandingUrl('back');
             
             return `
                 <div class="page">
                     <div class="header">
                         <h1>
-                            <img src="/uploads/logos/logo.jpg" alt="Orion logo">
+                            ${logoUrl ? `<img src="${logoUrl}" alt="Orion logo">` : '🎵'}
                             ORION
                         </h1>
                         <button class="menu-btn" onclick="navigateTo('mycenter')" style="font-size: 28px; line-height: 1;">👤</button>
                     </div>
 
                     <!-- Creative Banner - Orion Style -->
-                    <div style="background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.8) 100%), url('/uploads/logos/back.jpg') center/cover no-repeat; padding: 30px 20px; border-bottom: 1px solid rgba(0, 206, 209, 0.15);">
+                    <div style="background: ${backUrl ? `linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.8) 100%), url('${backUrl}') center/cover no-repeat` : '#0a0a0a'}; padding: 30px 20px; border-bottom: 1px solid rgba(0, 206, 209, 0.15);">
                         <div style="display: flex; align-items: flex-start; justify-content: space-between;">
                             <div>
                                 <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; line-height: 1.1; margin-bottom: 12px;">BETTER<br>CREATIVE</h2>
@@ -5904,17 +5933,14 @@
         }
 
         function renderRegister() {
+            const logoUrl = getBrandingUrl('logo');
             return `
                 <a href="index.html" class="official-website-btn">Official Website</a>
                 <div class="auth-page">
                     <!-- Left Panel - Brand -->
                     <div class="auth-brand">
                         <div class="auth-brand-logo">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            ${logoUrl ? `<img src="${logoUrl}" alt="Orion logo">` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
                             Orion Music
                         </div>
                         <h1 style="font-size: 42px; font-weight: 900; letter-spacing: -1px; line-height: 1.1;">Our work makes music <span style="background: #87CEEB; color: #000; padding: 2px 8px; border-radius: 4px;">standout</span>.</h1>

@@ -692,6 +692,26 @@ const adminAPI = {
         return await apiRequest(`/admin/level-icons/${level}`, {
             method: 'DELETE',
         });
+    },
+
+    // Branding images
+    async getBrandingImages() {
+        return await apiRequest('/admin/branding-images', {
+            method: 'GET',
+        });
+    },
+
+    async uploadBrandingImage(key, formData) {
+        return await apiRequest(`/admin/branding-images/${key}`, {
+            method: 'POST',
+            body: formData,
+        });
+    },
+
+    async deleteBrandingImage(key) {
+        return await apiRequest(`/admin/branding-images/${key}`, {
+            method: 'DELETE',
+        });
     }
 };
 

@@ -60,7 +60,8 @@
             chatUnreadCount: 0,
             chatImageFile: null,
             chatImagePreview: null,
-            events: []
+            events: [],
+            brandingImages: []
         };
 
         async function loadInitialData() {
@@ -76,7 +77,8 @@
                     loadVouchers(),
                     loadClickedVouchers(),
                     loadGlobalPopups(),
-                    loadAdminEvents()
+                    loadAdminEvents(),
+                    loadBrandingImages()
                 ]);
                 render();
             } catch (error) {
@@ -195,6 +197,44 @@
                 render();
             } catch (error) {
                 alert('Failed to delete event: ' + error.message);
+            }
+        }
+
+        async function loadBrandingImages() {
+            try {
+                adminState.brandingImages = await adminAPI.getBrandingImages();
+            } catch (error) {
+                adminState.brandingImages = [];
+            }
+        }
+
+        async function uploadBrandingImage(key) {
+            const fileInput = document.getElementById('branding-file-' + key);
+            if (!fileInput || !fileInput.files[0]) {
+                alert('Please select an image file');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            try {
+                await adminAPI.uploadBrandingImage(key, formData);
+                alert('Branding image "' + key + '" uploaded successfully!');
+                await loadBrandingImages();
+                render();
+            } catch (error) {
+                alert('Failed to upload branding image: ' + (error.message || 'Unknown error'));
+            }
+        }
+
+        async function deleteBrandingImage(key) {
+            if (!confirm('Are you sure you want to delete the "' + key + '" branding image?')) return;
+            try {
+                await adminAPI.deleteBrandingImage(key);
+                alert('Branding image deleted!');
+                await loadBrandingImages();
+                render();
+            } catch (error) {
+                alert('Failed to delete branding image: ' + (error.message || 'Unknown error'));
             }
         }
 
@@ -1357,6 +1397,11 @@
                         <li>
                             <button class="${adminState.currentPage === 'events' ? 'active' : ''}" onclick="navigateTo('events')">
                                 <span>🎉</span> Events
+                            </button>
+                        </li>
+                        <li>
+                            <button class="${adminState.currentPage === 'branding' ? 'active' : ''}" onclick="navigateTo('branding')">
+                                <span>🎨</span> Branding / Logos
                             </button>
                         </li>
                     </ul>
@@ -2783,6 +2828,63 @@
             createEvent(formData);
         }
 
+        function renderBranding() {
+            const brandingMap = {};
+            if (Array.isArray(adminState.brandingImages)) {
+                adminState.brandingImages.forEach(img => { brandingMap[img.image_key] = img; });
+            } else if (adminState.brandingImages && typeof adminState.brandingImages === 'object') {
+                // Handle case where it's a key->path object from the public endpoint
+                Object.keys(adminState.brandingImages).forEach(key => {
+                    brandingMap[key] = { image_key: key, image_path: adminState.brandingImages[key] };
+                });
+            }
+
+            const images = [
+                { key: 'logo', label: 'Website Logo', description: 'Used as the logo in navigation bars, login pages, and headers across the site.' },
+                { key: 'back', label: 'Homepage Banner Background', description: 'Background image for the "BETTER CREATIVE" banner section on the homepage (above the scrolling announcement).' },
+                { key: 'land', label: 'Landing Page Hero Background', description: 'Background image for the hero section on the public landing page (index.html).' }
+            ];
+
+            const API_URL = window.RANKSCIENCE_API_BASE_URL;
+
+            return `
+                <div class="content-header">
+                    <h2>🎨 Branding & Logo Management</h2>
+                    <p>Upload and manage your website logo, homepage banner background, and landing page hero image.</p>
+                </div>
+
+                <div style="display: grid; gap: 24px;">
+                    ${images.map(img => {
+                        const existing = brandingMap[img.key];
+                        const imgPath = existing ? existing.image_path : null;
+                        return `
+                        <div class="admin-card" style="margin-bottom: 0;">
+                            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+                                <div style="width: 180px; height: 120px; flex-shrink: 0; border-radius: 12px; overflow: hidden; border: 2px dashed ${imgPath ? '#10b981' : '#d1d5db'}; display: flex; align-items: center; justify-content: center; background: #f9fafb;">
+                                    ${imgPath ? `
+                                        <img src="${API_URL}${imgPath}" alt="${img.label}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span style=\\'font-size:48px;\\'>🖼️</span>'"/>
+                                    ` : `
+                                        <span style="font-size: 48px; opacity: 0.4;">🖼️</span>
+                                    `}
+                                </div>
+                                <div style="flex: 1; min-width: 240px;">
+                                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #1f2937;">${img.label}</h3>
+                                    <p style="color: #6b7280; font-size: 13px; margin-bottom: 12px; line-height: 1.5;">${img.description}</p>
+                                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                        <input type="file" id="branding-file-${img.key}" accept="image/*" class="form-input" style="max-width: 260px; padding: 6px; font-size: 13px;" />
+                                        <button class="btn btn-primary btn-small" onclick="uploadBrandingImage('${img.key}')" style="white-space: nowrap;">Upload</button>
+                                        ${imgPath ? `<button class="btn btn-danger btn-small" onclick="deleteBrandingImage('${img.key}')" style="white-space: nowrap;">Delete</button>` : ''}
+                                    </div>
+                                    ${imgPath ? `<p style="color: #10b981; font-size: 12px; margin-top: 8px;">✅ Currently set</p>` : `<p style="color: #f59e0b; font-size: 12px; margin-top: 8px;">⚠️ Not set — upload an image</p>`}
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
         function render() {
             const app = document.getElementById('app');
             let pageContent = '';
@@ -2796,6 +2898,7 @@
                 case 'notifications': pageContent = renderNotifications(); break;
                 case 'chat': pageContent = renderChat(); break;
                 case 'events': pageContent = renderEventsPage(); break;
+                case 'branding': pageContent = renderBranding(); break;
                 default: pageContent = renderOverview();
             }
             app.innerHTML = `

@@ -138,7 +138,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0.7) 100%), url('/uploads/logos/land.jpg') center/cover no-repeat;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 191, 255, 0.15) 0%, transparent 50%);
             animation: pulse 8s ease-in-out infinite;
         }
 
@@ -935,9 +935,9 @@
     <!-- Navigation -->
     <nav id="navbar">
         <div class="nav-container">
-            <div class="logo">
-                <img src="/uploads/logos/logo.jpg" alt="Orion logo">
-                <span>ORION</span>
+            <div class="logo" id="site-logo">
+                <img id="logo-img" src="" alt="Orion logo" style="display:none;">
+                <span>🎵 ORION</span>
             </div>
             <ul class="nav-links">
                 <li><a href="#home">Home</a></li>
@@ -1305,6 +1305,39 @@
                 alert('Sign up functionality will be implemented. This is a demo landing page.');
             });
         });
+
+        // Load branding images dynamically from API
+        (async function loadBranding() {
+            try {
+                const resp = await fetch('/api/branding-images');
+                if (!resp.ok) return;
+                const images = await resp.json();
+
+                // Apply logo
+                if (images.logo) {
+                    const logoImg = document.getElementById('logo-img');
+                    if (logoImg) {
+                        logoImg.src = images.logo;
+                        logoImg.style.display = '';
+                        // Remove the music note from the span
+                        const span = logoImg.nextElementSibling;
+                        if (span && span.tagName === 'SPAN') {
+                            span.textContent = 'ORION';
+                        }
+                    }
+                }
+
+                // Apply landing page hero background
+                if (images.land) {
+                    const heroBg = document.querySelector('.hero-bg');
+                    if (heroBg) {
+                        heroBg.style.background = "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.7) 100%), url('" + images.land + "') center/cover no-repeat";
+                    }
+                }
+            } catch (e) {
+                // Branding images not available, use defaults
+            }
+        })();
     </script>
 </body>
 </html>

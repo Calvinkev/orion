@@ -176,6 +176,24 @@ const levelIconStorage = multer.diskStorage({
 });
 const uploadLevelIcon = multer({ storage: levelIconStorage });
 
+// Separate storage for branding images (logo, background, landing)
+const brandingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(UPLOAD_BASE, 'logos');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    // Use the image_key as filename for predictable URLs
+    const key = req.params.key || req.body.key || 'branding';
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `${key}${ext}`);
+  }
+});
+const uploadBranding = multer({ storage: brandingStorage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: imageFileFilter });
+
 // Database connection - Railway MySQL Configuration
 // Support either discrete MYSQL* / DB_* env vars or a single DATABASE_URL
 let dbConfig = {
@@ -718,6 +736,20 @@ async function ensureSchema() {
     console.log('✅ withdraw_password_otps table ensured');
   } catch (err) {
     console.error('Schema ensure error (withdraw_password_otps):', err.message);
+  }
+
+  // Create branding_images table for site logo, background, and landing images
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS branding_images (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      image_key VARCHAR(50) NOT NULL UNIQUE,
+      image_path VARCHAR(500) NOT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX (image_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    console.log('✅ branding_images table ensured');
+  } catch (err) {
+    console.error('Schema ensure error (branding_images):', err.message);
   }
 }
 
@@ -3084,6 +3116,95 @@ app.post('/api/admin/assign-product-to-user', authMiddleware, adminMiddleware, a
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message || 'Manual assignment failed' });
+  }
+});
+
+// ==================== BRANDING IMAGES API ====================
+
+// Get all branding images (public)
+app.get('/api/branding-images', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT image_key, image_path, updated_at FROM branding_images');
+    const result = {};
+    rows.forEach(r => { result[r.image_key] = r.image_path; });
+    res.json(result);
+  } catch (err) {
+    console.error('Get branding images error:', err);
+    res.status(500).json({ error: 'Failed to get branding images' });
+  }
+});
+
+// Get a single branding image by key (serves the actual file)
+app.get('/api/branding-images/:key', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT image_path FROM branding_images WHERE image_key = ? LIMIT 1', [req.params.key]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Branding image not found' });
+    const filePath = path.join(__dirname, '..', rows[0].image_path.replace(/^\//, ''));
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+    // Fallback: try from uploads directly
+    const altPath = path.join(UPLOAD_BASE, 'logos', path.basename(rows[0].image_path));
+    if (fs.existsSync(altPath)) {
+      return res.sendFile(altPath);
+    }
+    res.status(404).json({ error: 'Image file not found on disk' });
+  } catch (err) {
+    console.error('Get branding image error:', err);
+    res.status(500).json({ error: 'Failed to get branding image' });
+  }
+});
+
+// Admin: Upload/update a branding image
+app.post('/api/admin/branding-images/:key', authMiddleware, adminMiddleware, uploadBranding.single('image'), async (req, res) => {
+  try {
+    const key = req.params.key;
+    const validKeys = ['logo', 'back', 'land'];
+    if (!validKeys.includes(key)) return res.status(400).json({ error: 'Invalid image key. Must be one of: ' + validKeys.join(', ') });
+    if (!req.file) return res.status(400).json({ error: 'Image file required' });
+    
+    const image_path = '/backend/uploads/logos/' + req.file.filename;
+    
+    // Upsert: insert or update
+    await pool.query(
+      'INSERT INTO branding_images (image_key, image_path) VALUES (?, ?) ON DUPLICATE KEY UPDATE image_path = ?, updated_at = CURRENT_TIMESTAMP',
+      [key, image_path, image_path]
+    );
+    
+    res.json({ success: true, key, image_path });
+  } catch (err) {
+    console.error('Upload branding image error:', err);
+    res.status(500).json({ error: 'Failed to upload branding image' });
+  }
+});
+
+// Admin: Delete a branding image
+app.delete('/api/admin/branding-images/:key', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const key = req.params.key;
+    const [rows] = await pool.query('SELECT image_path FROM branding_images WHERE image_key = ? LIMIT 1', [key]);
+    if (rows.length > 0 && rows[0].image_path) {
+      const filePath = path.join(__dirname, '..', rows[0].image_path.replace(/^\//, ''));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    await pool.query('DELETE FROM branding_images WHERE image_key = ?', [key]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete branding image error:', err);
+    res.status(500).json({ error: 'Failed to delete branding image' });
+  }
+});
+
+// Admin: Get all branding images (admin view)
+app.get('/api/admin/branding-images', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM branding_images ORDER BY image_key');
+    res.json(rows);
+  } catch (err) {
+    console.error('Admin get branding images error:', err);
+    res.status(500).json({ error: 'Failed to get branding images' });
   }
 });
 
