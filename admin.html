@@ -1956,33 +1956,29 @@
                                     </div>
                                     <button class="btn btn-secondary" onclick="sendNotificationToUser(${item.id})">Send Notification</button>
                                 </div>
+                                ${(() => {
+                                    const level = item.level || 1;
+                                    const limits = {1: {total: 135, perSet: 45}, 2: {total: 150, perSet: 50}, 3: {total: 165, perSet: 55}, 4: {total: 180, perSet: 60}};
+                                    const taskLimits = limits[level] || limits[1];
+                                    const currentSet = item.current_set || 1;
+                                    const tasksToday = item.tasks_completed_today || 0;
+                                    const tasksInSet = tasksToday;
+                                    const totalToday = (currentSet - 1) * taskLimits.perSet + tasksToday;
+                                    const isAllDone = currentSet >= 3 && tasksToday >= taskLimits.perSet;
+                                    return `
                                 <div style="background: #fef3c7; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
                                     <h4 style="margin-bottom: 12px;">🔄 Task Management</h4>
                                     <p style="font-size: 13px; color: #92400e; margin-bottom: 12px;">
-                                        ${(() => {
-                                            const level = item.level || 1;
-                                            // Match backend limits: {1: {total: 135, perSet: 45}, 2: {total: 150, perSet: 50}, 3: {total: 165, perSet: 55}, 4: {total: 180, perSet: 60}}
-                                            const limits = {1: {total: 135, perSet: 45}, 2: {total: 150, perSet: 50}, 3: {total: 165, perSet: 55}, 4: {total: 180, perSet: 60}};
-                                            const taskLimits = limits[level] || limits[1];
-                                            const currentSet = item.current_set || 1;
-                                            const tasksToday = item.tasks_completed_today || 0;
-                                            // tasks_completed_today represents tasks in the CURRENT set
-                                            // When in Set 1: tasks_completed_today = Set 1 progress
-                                            // When in Set 2: tasks_completed_today = Set 2 progress (was reset to 0 when moved to Set 2)
-                                            // When in Set 3: tasks_completed_today = Set 3 progress (was reset to 0 when moved to Set 3)
-                                            const tasksInSet = tasksToday;
-                                            // Total today = completed sets * perSet + current set progress
-                                            const totalToday = (currentSet - 1) * taskLimits.perSet + tasksToday;
-                                            return `<strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #00CED1;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}/3) | Total Today: ${totalToday}/${taskLimits.total}`;
-                                        })()}
+                                        <strong>📊 Submission Progress:</strong> <span style="font-size: 16px; color: #00CED1;">${tasksInSet}/${taskLimits.perSet}</span> (Set ${currentSet}/3) | Total Today: ${totalToday}/${taskLimits.total}
                                     </p>
-                                    <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%;" onclick="resetUserTasks(${item.id})" ${currentSet >= 3 && tasksToday >= taskLimits.perSet ? 'disabled title="User has completed all 3 sets"' : ''}>
+                                    <button class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 100%;" onclick="resetUserTasks(${item.id})" ${isAllDone ? 'disabled title="User has completed all 3 sets"' : ''}>
                                         🔄 Reset Tasks (Allow Set ${Math.min(currentSet + 1, 3)})
                                     </button>
                                     <p style="font-size: 11px; color: #92400e; margin-top: 8px;">
                                         Use this when user completes Set ${currentSet} and needs to continue to Set ${Math.min(currentSet + 1, 3)}.
                                     </p>
-                                </div>
+                                </div>`;
+                                })()}
                                 <div style="background: #fce7f3; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
                                     <h4 style="margin-bottom: 12px;">⚡ Automatic Negative Balance Trigger</h4>
                                     <p style="font-size: 12px; color: #9d174d; margin-bottom: 12px;">
