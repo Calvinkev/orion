@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Orion Music - Elevate Your Music Career</title>
     <style>
         * {
@@ -11,8 +11,15 @@
             box-sizing: border-box;
         }
 
+        /* Prevent any element from being wider than viewport */
+        body, html, section, div {
+            max-width: 100vw;
+        }
+
         html {
             scroll-behavior: smooth;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         body {
@@ -20,6 +27,9 @@
             background: #f0f9ff;
             color: #1e3a5f;
             overflow-x: hidden;
+            position: relative;
+            width: 100%;
+            touch-action: pan-y;
         }
 
         /* Navigation */
@@ -278,6 +288,16 @@
         .about {
             padding: 120px 20px;
             position: relative;
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        /* Universal section constraint */
+        section {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
         }
 
         .section-title {
