@@ -1769,67 +1769,6 @@
                 starting: 'Startet',
                 orionMusic: 'Orion Music',
                 records: 'Aufzeichnungen'
-            },
-            Nork: {
-                // Menu items
-                menu: 'Meny',
-                services: 'Tjenester',
-                terms: 'Vilkår og betingelser',
-                events: 'Arrangementer',
-                withdraw: 'Ta ut',
-                deposit: 'Innskudd',
-                myCenter: 'Mitt senter',
-                home: 'Hjem',
-                languages: 'Språk',
-                support: 'Støtte',
-                logout: 'Logg ut',
-                
-                // Login page
-                welcomeBack: 'Velkommen tilbake',
-                username: 'Brukernavn',
-                password: 'Passord',
-                login: 'Logg inn',
-                forgotPassword: 'Glemt passord?',
-                contactSupport: '💬 Kontakt støtte',
-                dontHaveAccount: 'Ingen konto?',
-                signUp: 'Registrer',
-                
-                // Home page
-                whyUs: 'hvorfor oss',
-                whyUsDescription: 'mer trafikk til nettstedet ditt uten å stole på informasjonskapsler, Orion Music kan låse opp en ny toppinntektskilde for deg. Vi skalerer dine høyest konverterende en-til-en markedsføringsmeldinger gjennom e-post, tekstmeldinger og annonser.',
-                menuList: 'Menyliste',
-                service: 'Tjeneste',
-                termsShort: 'Vilkår',
-                eventsShort: 'Arrangementer',
-                contactUs: 'Kontakt Oss',
-                inviteFriends: 'Inviter',
-                employeeLevel: 'Ansattnivå',
-                viewMore: 'Se mer →',
-                userReviews: 'Brukeranmeldelser',
-                orionMusic: 'Orion Music',
-                
-                // VIP levels
-                profitOf: 'Fortjeneste av',
-                ratings: 'vurderinger',
-                sets: 'sett',
-                access: 'tilgang',
-                
-                // Optimization/Dashboard page
-                hiUser: 'Hei,',
-                walletBalance: 'Lommebokbalanse',
-                depositRequired: 'Innskudd kreves for å fortsette',
-                profitsAdded: 'Fortjeneste vil legges til her',
-                commission: 'Provisjon',
-                commissionEarned: 'Tjent Provisjon',
-                pressStart: 'Trykk Start for å Sende',
-                set: 'Sett',
-                usd: 'USD',
-                
-                // Bottom navigation
-                home: 'HJEM',
-                starting: 'Starter',
-                orionMusic: 'Orion Music',
-                records: 'Opptegnelser'
             }
         };
 
@@ -2297,7 +2236,7 @@
                 let displayValue;
                 if (target >= 1000) {
                     displayValue = (current / 1000).toFixed(1) + 'M+';
-                } else if (target >= 50) {
+                } else if (target === 50) {
                     displayValue = Math.floor(current) + 'K+';
                 } else {
                     displayValue = Math.floor(current) + '+';
@@ -4713,7 +4652,7 @@
                             ${logoUrl ? `<img src="${logoUrl}" alt="Orion logo">` : '🎵'}
                             ORION
                         </h1>
-                        <button class="menu-btn" onclick="navigateTo('mycenter')" style="font-size: 28px; line-height: 1;">👤</button>
+                        <button class="menu-btn" onclick="navigateTo('mycenter')" style="font-size: 28px; line-height: 1; display: flex; align-items: center; gap: 4px;">👤 <span style="font-size: 12px; font-weight: 600;">Profile</span></button>
                     </div>
 
                     <!-- Creative Banner - Orion Style -->
@@ -4723,7 +4662,7 @@
                                 <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; line-height: 1.1; margin-bottom: 12px;">BETTER<br>CREATIVE</h2>
                                 <p style="color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.5; max-width: 280px;"><span style="color: #00CED1; font-weight: 600;">Creative improves</span> with collaboration, because you know both communication strategy and the placement opportunities and limitations</p>
                             </div>
-                            <div style="font-size: 48px; opacity: 0.8;">🎧</div>
+
                         </div>
                     </div>
 
@@ -4732,7 +4671,7 @@
                         <span style="font-size: 16px;">📢</span>
                         <div style="flex: 1; overflow: hidden;">
                             <div style="white-space: nowrap; animation: marquee 20s linear infinite; color: #00CED1; font-size: 13px;">
-                                Welcome to Orion! Complete your daily assignments to earn rewards. Contact support for any assistance. New promotions available - check the Events section!
+                                Welcome to our platform! We are thrilled to have you join our community, where you can engage and explore. Our services are available daily from 9:00AM to 9:59 PM (CST)
                             </div>
                         </div>
                     </div>
@@ -4758,7 +4697,7 @@
                             <span style="font-size: 20px; margin-bottom: 4px;">📋</span>
                             <span style="font-size: 11px; font-weight: 600;">TRACKING</span>
                         </button>
-                        <button onclick="navigateTo('support')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
+                        <button onclick="state.supportOptionsOpen = true; render();" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
                             <span style="font-size: 20px; margin-bottom: 4px;">👥</span>
                             <span style="font-size: 11px; font-weight: 600;">SUPPORT</span>
                         </button>
@@ -4788,10 +4727,10 @@
                         </button>
                     </div>
 
-                    <div class="section">
+                    <div class="section" style="background: #ffffff; padding: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                            <h3 class="section-title" style="margin: 0;">${t('employeeLevel')}</h3>
-                            <span class="view-more">${t('viewMore')}</span>
+                            <h3 class="section-title" style="margin: 0; color: #00BFFF;">${t('employeeLevel')}</h3>
+                            <span class="view-more" style="color: #000000;">${t('viewMore')}</span>
                         </div>
                         
                         <div class="vip-scroll">
@@ -4818,59 +4757,59 @@
                     </div>
 
                     <!-- Enhanced Promo Section - Music Solutions -->
-                    <div class="section" style="padding: 20px;">
+                    <div class="section" style="padding: 20px; background: #ffffff;">
                         <div style="text-align: center; margin-bottom: 24px;">
-                            <h2 style="font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 8px;">We create proven solutions for all your music needs</h2>
+                            <h2 style="font-size: 20px; font-weight: bold; color: #00BFFF; margin-bottom: 8px;">We create proven solutions for all your music needs</h2>
                             <div style="width: 60px; height: 3px; background: #00CED1; margin: 0 auto; border-radius: 2px;"></div>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px;">
                             <!-- Card 1 -->
-                            <div class="feature-card animate-on-scroll" data-delay="0" style="background: #111113; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 206, 209, 0.2); position: relative; overflow: hidden;">
+                            <div class="feature-card animate-on-scroll" data-delay="0" style="background: #f9f9f9; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 191, 255, 0.2); position: relative; overflow: hidden;">
                                 <div style="width: 50px; height: 50px; background: #00CED1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
                                     <span style="font-size: 24px;">🎵</span>
                                 </div>
-                                <h3 style="color: #ffffff; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Forefront of music rights management</h3>
-                                <p style="color: #52525b; font-size: 14px; line-height: 1.5;">Leading the field in client services, technology, and rights advocacy.</p>
+                                <h3 style="color: #00BFFF; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Forefront of music rights management</h3>
+                                <p style="color: #000000; font-size: 14px; line-height: 1.5;">Leading the field in client services, technology, and rights advocacy.</p>
                             </div>
                             
                             <!-- Card 2 -->
-                            <div class="feature-card animate-on-scroll" data-delay="150" style="background: #111113; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 206, 209, 0.2); position: relative; overflow: hidden;">
+                            <div class="feature-card animate-on-scroll" data-delay="150" style="background: #f9f9f9; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 191, 255, 0.2); position: relative; overflow: hidden;">
                                 <div style="width: 50px; height: 50px; background: #00CED1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
                                     <span style="font-size: 24px;">🎼</span>
                                 </div>
-                                <h3 style="color: #ffffff; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Bridge between songwriters and businesses</h3>
-                                <p style="color: #52525b; font-size: 14px; line-height: 1.5;">We offer songwriters exceptional analytics and robust data solutions.</p>
+                                <h3 style="color: #00BFFF; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Bridge between songwriters and businesses</h3>
+                                <p style="color: #000000; font-size: 14px; line-height: 1.5;">We offer songwriters exceptional analytics and robust data solutions.</p>
                             </div>
                             
                             <!-- Card 3 -->
-                            <div class="feature-card animate-on-scroll" data-delay="300" style="background: #111113; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 206, 209, 0.2); position: relative; overflow: hidden;">
+                            <div class="feature-card animate-on-scroll" data-delay="300" style="background: #f9f9f9; border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 191, 255, 0.2); position: relative; overflow: hidden;">
                                 <div style="width: 50px; height: 50px; background: #00CED1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
                                     <span style="font-size: 24px;">🌍</span>
                                 </div>
-                                <h3 style="color: #ffffff; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Global reach and worldwide solution</h3>
-                                <p style="color: #52525b; font-size: 14px; line-height: 1.5;">Worldwide solution to performing rights licensing needs.</p>
+                                <h3 style="color: #00BFFF; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Global reach and worldwide solution</h3>
+                                <p style="color: #000000; font-size: 14px; line-height: 1.5;">Worldwide solution to performing rights licensing needs.</p>
                             </div>
                         </div>
                         
                         <!-- Statistics -->
-                        <div class="animate-on-scroll" data-delay="450" style="display: flex; justify-content: space-around; background: linear-gradient(135deg, rgba(0, 206, 209, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%); border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 206, 209, 0.3);">
+                        <div class="animate-on-scroll" data-delay="450" style="display: flex; justify-content: space-around; background: linear-gradient(135deg, rgba(0, 191, 255, 0.08) 0%, rgba(0, 191, 255, 0.15) 100%); border-radius: 16px; padding: 20px; border: 1px solid rgba(0, 191, 255, 0.3);">
                             <div style="text-align: center;">
-                                <div class="counter" data-target="50" style="font-size: 24px; font-weight: bold; color: #00CED1;">0K+</div>
-                                <div style="font-size: 12px; color: #52525b;">Active Users</div>
+                                <div class="counter" data-target="50" style="font-size: 24px; font-weight: bold; color: #00BFFF;">0K+</div>
+                                <div style="font-size: 12px; color: #000000;">Active Users</div>
                             </div>
                             <div style="text-align: center;">
-                                <div class="counter" data-target="1000" style="font-size: 24px; font-weight: bold; color: #00CED1;">0M+</div>
-                                <div style="font-size: 12px; color: #52525b;">Songs Promoted</div>
+                                <div class="counter" data-target="1000" style="font-size: 24px; font-weight: bold; color: #00BFFF;">0M+</div>
+                                <div style="font-size: 12px; color: #000000;">Songs Promoted</div>
                             </div>
                             <div style="text-align: center;">
-                                <div class="counter" data-target="150" style="font-size: 24px; font-weight: bold; color: #00CED1;">0+</div>
-                                <div style="font-size: 12px; color: #52525b;">Countries</div>
+                                <div class="counter" data-target="150" style="font-size: 24px; font-weight: bold; color: #00BFFF;">0+</div>
+                                <div style="font-size: 12px; color: #000000;">Countries</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="text-center text-muted" style="padding: 16px;">
+                    <div class="text-center text-muted" style="padding: 16px; background: #ffffff; color: #000000;">
                         © 2025 - OrionPromotion. ALL RIGHTS RESERVED
                     </div>
 
@@ -5029,7 +4968,7 @@
                         <span style="font-size: 10px;">${t('home')}</span>
                     </button>
                     <button class="nav-btn-center" onclick="navigateTo('optimization')">
-                        ${activePage === 'optimization' ? t('starting') : t('orionMusic')}
+                        ${t('starting')}
                     </button>
                     <button class="nav-btn" onclick="navigateTo('records')">
                         <span style="font-size: 24px;">📋</span>
@@ -5048,8 +4987,7 @@
                 { name: 'Francais', icon: '🇫🇷' },
                 { name: 'Svenska', icon: '🇸🇪' },
                 { name: 'Italiano', icon: '🇮🇹' },
-                { name: 'Deutsch', icon: '🇩🇪' },
-                { name: 'Nork', icon: '🌐' }
+                { name: 'Deutsch', icon: '🇩🇪' }
             ];
             return `
                 <div class="side-menu-overlay" onclick="toggleMenu()">
@@ -5161,8 +5099,7 @@
                 { name: 'Francais', icon: '🇫🇷' },
                 { name: 'Svenska', icon: '🇸🇪' },
                 { name: 'Italiano', icon: '🇮🇹' },
-                { name: 'Deutsch', icon: '🇩🇪' },
-                { name: 'Nork', icon: '🌐' }
+                { name: 'Deutsch', icon: '🇩🇪' }
             ];
 
             return `
