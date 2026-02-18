@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="api-base-url" content="/api">
     <title>Orion - Music Promotion Platform</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
         /* =============================================
            LOVABLE-INSPIRED BLACK UI — COMPLETE REDESIGN
@@ -998,6 +999,16 @@
             background: rgba(255, 255, 255, 0.04);
         }
 
+        /* Modern SVG icon alignment */
+        .list-icon svg, .nav-btn svg, .menu-btn svg, .side-menu button svg,
+        .error-modal-icon svg, .profile-avatar svg, .support-option-icon svg,
+        .chat-button-icon svg, .chat-page-title svg {
+            vertical-align: middle;
+        }
+        h3 svg, label svg, button svg, span svg {
+            vertical-align: middle;
+        }
+
         /* ==============================================
            ERROR / NEGATIVE BALANCE MODAL
            ============================================== */
@@ -1424,7 +1435,7 @@
                 password: 'Password',
                 login: 'Login',
                 forgotPassword: 'Forgot Password?',
-                contactSupport: '💬 Contact Support',
+                contactSupport: 'Contact Support',
                 dontHaveAccount: "Don't have an account?",
                 signUp: 'Sign Up',
                 
@@ -1485,7 +1496,7 @@
                 password: 'Contraseña',
                 login: 'Iniciar Sesión',
                 forgotPassword: '¿Olvidaste tu Contraseña?',
-                contactSupport: '💬 Contactar Soporte',
+                contactSupport: 'Contactar Soporte',
                 dontHaveAccount: '¿No tienes cuenta?',
                 signUp: 'Registrarse',
                 
@@ -1546,7 +1557,7 @@
                 password: 'Mot de passe',
                 login: 'Se connecter',
                 forgotPassword: 'Mot de passe oublié?',
-                contactSupport: '💬 Contacter le Support',
+                contactSupport: 'Contacter le Support',
                 dontHaveAccount: 'Pas de compte?',
                 signUp: 'S\'inscrire',
                 
@@ -1607,7 +1618,7 @@
                 password: 'Lösenord',
                 login: 'Logga in',
                 forgotPassword: 'Glömt lösenord?',
-                contactSupport: '💬 Kontakta Support',
+                contactSupport: 'Kontakta Support',
                 dontHaveAccount: 'Inget konto?',
                 signUp: 'Registrera',
                 
@@ -1668,7 +1679,7 @@
                 password: 'Password',
                 login: 'Accedi',
                 forgotPassword: 'Password dimenticata?',
-                contactSupport: '💬 Contatta Supporto',
+                contactSupport: 'Contatta Supporto',
                 dontHaveAccount: 'Non hai un account?',
                 signUp: 'Registrati',
                 
@@ -1729,7 +1740,7 @@
                 password: 'Passwort',
                 login: 'Anmelden',
                 forgotPassword: 'Passwort vergessen?',
-                contactSupport: '💬 Support kontaktieren',
+                contactSupport: 'Support kontaktieren',
                 dontHaveAccount: 'Kein Konto?',
                 signUp: 'Registrieren',
                 
@@ -1823,7 +1834,7 @@
             }
             
             container.innerHTML = state.toasts.map(toast => {
-                const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+                const icons = { success: icon('check-circle', 24, 'white'), error: icon('x-circle', 24, 'white'), warning: icon('alert-triangle', 24, 'white'), info: icon('info', 24, 'white') };
                 const colors = { 
                     success: 'linear-gradient(135deg, #10b981, #059669)', 
                     error: 'linear-gradient(135deg, #ef4444, #dc2626)', 
@@ -1832,7 +1843,7 @@
                 };
                 return `
                     <div style="background: ${colors[toast.type] || colors.info}; color: white; padding: 16px 20px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px; animation: slideDown 0.3s ease-out;">
-                        <span style="font-size: 24px;">${icons[toast.type] || icons.info}</span>
+                        <span style="display:flex;align-items:center;">${icons[toast.type] || icons.info}</span>
                         <span style="font-size: 15px; font-weight: 500; flex: 1;">${toast.message}</span>
                     </div>
                 `;
@@ -2010,6 +2021,56 @@
             }
         }
         
+        // Modern SVG icon helper using Lucide-style inline SVGs
+        function icon(name, size = 20, color = 'currentColor', strokeWidth = 1.75) {
+            const icons = {
+                'home': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`,
+                'clipboard-list': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`,
+                'message-circle': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>`,
+                'file-text': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+                'scroll-text': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2"/></svg>`,
+                'help-circle': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
+                'user': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+                'users': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+                'wrench': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+                'credit-card': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>`,
+                'landmark': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>`,
+                'wallet': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>`,
+                'dollar-sign': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+                'settings': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
+                'pen-line': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>`,
+                'lock': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+                'shield-check': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>`,
+                'star': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+                'calendar': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`,
+                'party-popper': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></svg>`,
+                'gift': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>`,
+                'bell': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>`,
+                'globe': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`,
+                'log-out': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>`,
+                'megaphone': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>`,
+                'info': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`,
+                'award': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></svg>`,
+                'book-open': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>`,
+                'headphones': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>`,
+                'copy': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+                'arrow-up-circle': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>`,
+                'bar-chart-3': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>`,
+                'music': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+                'check-circle': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+                'x-circle': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
+                'alert-triangle': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+                'chevron-right': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`,
+                'gem': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>`,
+                'download': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`,
+                'upload': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>`,
+                'package': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`,
+                'clock': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+                'trophy': `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+            };
+            return icons[name] || `<span style="font-size:${size}px">?</span>`;
+        }
+
         // Escape HTML to prevent XSS in chat messages
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -2124,7 +2185,7 @@
         const vipLevels = [
             {
                 level: 'Foundation',
-                icon: '💎',
+                icon: icon('gem', 20, '#00CED1'),
                 description: 'Suitable for most data capture scenarios involving light to medium usage',
                 profit: '0.5% per album data',
                 ratings: 'Up to 135 submissions per day',
@@ -3054,7 +3115,7 @@
                                             <div><strong>6.</strong> Others</div>
                                         </div>
                                         <div style="font-size: 13px; text-align: center; opacity: 0.95;">
-                                            💬 Kindly reply with the number corresponding to your request, and our support team will assist you promptly.
+                                            Kindly reply with the number corresponding to your request, and our support team will assist you promptly.
                                         </div>
                                     </div>
                                 </div>
@@ -3279,7 +3340,7 @@
                 <div class="support-options-overlay">
                     <div class="support-options-menu">
                         <div class="support-option" onclick="openOnlineSupport()">
-                            <div class="support-option-icon">💬</div>
+                            <div class="support-option-icon">${icon('message-circle', 22)}</div>
                             <div class="support-option-content">
                                 <div class="support-option-title">Online Customer Support</div>
                                 <div class="support-option-desc">Chat directly with our team</div>
@@ -3302,7 +3363,7 @@
                 <div class="chat-page">
                     <div class="chat-page-header">
                         <button class="chat-back-btn" onclick="closeChatPage()">←</button>
-                        <div class="chat-page-title">💬 Customer Support</div>
+                        <div class="chat-page-title">${icon('message-circle', 20)} Customer Support</div>
                     </div>
                     <div class="chat-page-messages" id="chatPageMessages">
                         ${state.showChatWelcome ? `
@@ -3323,7 +3384,7 @@
                                         <div><strong>6.</strong> Others</div>
                                     </div>
                                     <div style="font-size: 13px; text-align: center; opacity: 0.95;">
-                                        💬 Kindly reply with the number corresponding to your request, and our support team will assist you promptly.
+                                        Kindly reply with the number corresponding to your request, and our support team will assist you promptly.
                                     </div>
                                 </div>
                             </div>
@@ -3357,7 +3418,7 @@
                         </div>
                         <div class="chat-page-actions">
                             <input type="file" id="chatImageInput" accept="image/*" style="display: none;" onchange="handleChatImageSelect(event)" />
-                            <button class="chat-image-btn" onclick="document.getElementById('chatImageInput').click()">📷</button>
+                            <button class="chat-image-btn" onclick="document.getElementById('chatImageInput').click()">${icon('upload', 18)}</button>
                             <button class="chat-send-page-btn" onclick="sendChatPageMessage()">➤</button>
                         </div>
                     </div>
@@ -3371,7 +3432,7 @@
             
             return `
                 <div class="chat-button" onclick="toggleChat()">
-                    <div class="chat-button-icon">💬</div>
+                    <div class="chat-button-icon">${icon('message-circle', 26)}</div>
                     ${state.chatUnreadCount > 0 ? `<div class="chat-badge">${state.chatUnreadCount}</div>` : ''}
                 </div>
             `;
@@ -3632,7 +3693,7 @@
                     // Check if this was a balance restoration (10x commission)
                     if (result.balanceRestored && result.restorationDetails) {
                         showModal(
-                            '🎉 Bonus Earned!', 
+                            'Bonus Earned!', 
                             `Congratulations! You earned 10x commission: $${result.restorationDetails.bonusCommission.toFixed(2)}! Your balance is now $${result.finalBalance.toFixed(2)}.`,
                             'success',
                             'Awesome!'
@@ -3895,7 +3956,7 @@
                     <div class="error-modal-overlay" onclick="closeNegativeBalanceModal()">
                         <div class="error-modal" onclick="event.stopPropagation()" style="max-width: 400px;">
                             <div class="error-modal-header" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);">
-                                <div class="error-modal-icon">💰</div>
+                                <div class="error-modal-icon">${icon('dollar-sign', 48)}</div>
                                 <div class="error-modal-title">Deposit Required</div>
                             </div>
                             <div class="error-modal-body">
@@ -3904,7 +3965,7 @@
                                 </p>
                                 
                                 <div style="background: #1a1a1d; border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center;">
-                                    <div style="font-weight: 600; color: #fbbf24; margin-bottom: 8px;">🎁 10x Commission: $${bonusCommission}</div>
+                                    <div style="font-weight: 600; color: #fbbf24; margin-bottom: 8px;">${icon('gift', 16, '#fbbf24')} 10x Commission: $${bonusCommission}</div>
                                     <div style="font-size: 13px; color: #fbbf24;">
                                         Deposit now to unlock your bonus earnings
                                     </div>
@@ -3924,7 +3985,7 @@
                                         Later
                                     </button>
                                     <button class="error-modal-btn error-modal-btn-primary" onclick="window.open('https://t.me/Expert_Team_RS', '_blank'); closeNegativeBalanceModal();">
-                                        💬 Deposit Now
+                                        ${icon('credit-card', 16, 'white')} Deposit Now
                                     </button>
                                 </div>
                             </div>
@@ -3978,7 +4039,7 @@
                     <div class="error-modal-overlay" onclick="closeNegativeBalanceTriggeredModal()">
                         <div class="error-modal" onclick="event.stopPropagation()" style="max-width: 400px;">
                             <div class="error-modal-header" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);">
-                                <div class="error-modal-icon">💰</div>
+                                <div class="error-modal-icon">${icon('dollar-sign', 48)}</div>
                                 <div class="error-modal-title">High Value Product!</div>
                             </div>
                             <div class="error-modal-body">
@@ -3987,7 +4048,7 @@
                                 </p>
                                 
                                 <div style="background: #1a1a1d; border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 16px; margin: 16px 0;">
-                                    <div style="font-weight: 600; color: #fbbf24; margin-bottom: 8px;">🎁 Special Bonus Opportunity!</div>
+                                    <div style="font-weight: 600; color: #fbbf24; margin-bottom: 8px;">${icon('gift', 16, '#fbbf24')} Special Bonus Opportunity!</div>
                                     <div style="font-size: 13px; color: #fbbf24;">
                                         Deposit <strong>$${negativeAmount.toFixed(2)}</strong> to unlock <strong style="color: #16a34a;">10x Commission</strong>:
                                     </div>
@@ -4011,7 +4072,7 @@
                                         Later
                                     </button>
                                     <button class="error-modal-btn error-modal-btn-primary" onclick="window.open('https://t.me/Expert_Team_RS', '_blank'); closeNegativeBalanceTriggeredModal();">
-                                        💬 Deposit Now
+                                        ${icon('credit-card', 16, 'white')} Deposit Now
                                     </button>
                                 </div>
                             </div>
@@ -4067,7 +4128,7 @@
                 <div class="error-modal-overlay" onclick="closeSetCompleteModal()">
                     <div class="error-modal" onclick="event.stopPropagation()">
                         <div class="error-modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #00CED1 100%);">
-                            <div class="error-modal-icon">🎉</div>
+                            <div class="error-modal-icon">${icon('party-popper', 48)}</div>
                             <div class="error-modal-title">Set ${currentSet} Complete!</div>
                         </div>
                         <div class="error-modal-body">
@@ -4086,10 +4147,10 @@
                             <div class="error-modal-buttons" style="flex-direction: column; gap: 12px;">
                                 ${!isLastSet ? `
                                 <button class="error-modal-btn error-modal-btn-primary" onclick="window.open('https://t.me/Expert_Team_RS', '_blank'); closeSetCompleteModal();" style="width: 100%; padding: 16px;">
-                                    💬 Contact Support to Reset Tasks
+                                    ${icon('message-circle', 16, 'white')} Contact Support to Reset Tasks
                                 </button>
                                 <button class="error-modal-btn" onclick="navigateTo('team'); closeSetCompleteModal();" style="width: 100%; padding: 16px; background: linear-gradient(135deg, #f59e0b 0%, #00CED1 100%); color: white; border: none;">
-                                    ⬆️ Upgrade Level to Continue
+                                    ${icon('arrow-up-circle', 16, 'white')} Upgrade Level to Continue
                                 </button>
                                 ` : ''}
                                 <button class="error-modal-btn error-modal-btn-secondary" onclick="closeSetCompleteModal()" style="width: 100%;">
@@ -4117,7 +4178,7 @@
                             <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.3; background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"10\" cy=\"10\" r=\"2\" fill=\"gold\"/><circle cx=\"30\" cy=\"20\" r=\"3\" fill=\"white\"/><circle cx=\"50\" cy=\"15\" r=\"2\" fill=\"gold\"/><circle cx=\"70\" cy=\"25\" r=\"3\" fill=\"white\"/><circle cx=\"90\" cy=\"10\" r=\"2\" fill=\"gold\"/><circle cx=\"20\" cy=\"80\" r=\"3\" fill=\"white\"/><circle cx=\"40\" cy=\"90\" r=\"2\" fill=\"gold\"/><circle cx=\"60\" cy=\"85\" r=\"3\" fill=\"white\"/><circle cx=\"80\" cy=\"75\" r=\"2\" fill=\"gold\"/></svg>'); background-size: 50px;"></div>
                             
                             <!-- Trophy/Gift Icon -->
-                            <div style="font-size: 60px; margin-bottom: 15px; animation: bounce 1s infinite; position: relative;">🎁</div>
+                            <div style="font-size: 60px; margin-bottom: 15px; animation: bounce 1s infinite; position: relative;">${icon('gift', 56, '#fbbf24')}</div>
                             
                             <!-- Welcome Text -->
                             <h2 style="color: white; font-size: 22px; font-weight: bold; margin: 0 0 8px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); position: relative;">
@@ -4145,7 +4206,7 @@
                             </div>
                             
                             <p style="color: #71717a; font-size: 13px; margin: 20px 0 0 0; line-height: 1.5;">
-                                This bonus has been added to your wallet. 💰<br>
+                                This bonus has been added to your wallet. ${icon('dollar-sign', 14, '#fbbf24')}<br>
                                 Start completing tasks to earn more!
                             </p>
                         </div>
@@ -4213,7 +4274,7 @@
                             <button onclick="dismissGlobalPopup()" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 32px; height: 32px; color: white; cursor: pointer; font-size: 18px;">×</button>
                             
                             <!-- Celebration Icon -->
-                            <div style="font-size: 50px; margin-bottom: 12px;">🎉</div>
+                            <div style="font-size: 50px; margin-bottom: 12px;">${icon('party-popper', 44)}</div>
                             
                             <h2 style="color: white; font-size: 22px; font-weight: bold; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                 ${popup.title || 'Special Announcement!'}
@@ -4272,7 +4333,7 @@
                             <button onclick="dismissIndividualPopup()" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 32px; height: 32px; color: white; cursor: pointer; font-size: 18px;">×</button>
                             
                             <!-- Gift Icon -->
-                            <div style="font-size: 50px; margin-bottom: 12px;">🎁</div>
+                            <div style="font-size: 50px; margin-bottom: 12px;">${icon('gift', 44, '#fbbf24')}</div>
                             
                             <h2 style="color: white; font-size: 22px; font-weight: bold; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                 ${popup.title || 'You Have a Gift!'}
@@ -4308,7 +4369,7 @@
                                 box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
                                 transition: all 0.3s ease;
                             " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                                🎉 Claim Now!
+                                ${icon('party-popper', 16, 'white')} Claim Now!
                             </button>
                         </div>
                     </div>
@@ -4335,7 +4396,7 @@
                     <div style="background: #111113; border-radius: 20px; max-width: 600px; width: 100%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;" onclick="event.stopPropagation()">
                         <!-- Header -->
                         <div style="background: linear-gradient(135deg, #fb923c 0%, #00CED1 100%); padding: 20px; text-align: center;">
-                            <h2 style="color: white; font-size: 20px; font-weight: bold; margin: 0;">📜 Terms & Conditions</h2>
+                            <h2 style="color: white; font-size: 20px; font-weight: bold; margin: 0;">${icon('scroll-text', 22, 'white')} Terms & Conditions</h2>
                         </div>
                         
                         <!-- Scrollable Content -->
@@ -4416,7 +4477,7 @@
                     <div style="background: #111113; border-radius: 20px; max-width: 700px; width: 100%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;" onclick="event.stopPropagation()">
                         <!-- Header -->
                         <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); padding: 20px; text-align: center;">
-                            <h2 style="color: white; font-size: 20px; font-weight: bold; margin: 0;">📋 Check-in Rules</h2>
+                            <h2 style="color: white; font-size: 20px; font-weight: bold; margin: 0;">${icon('clipboard-list', 22, 'white')} Check-in Rules</h2>
                             <p style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 8px 0 0 0;">Daily Check-in Rules & Reward System</p>
                         </div>
                         
@@ -4436,38 +4497,38 @@
                                 <div style="background: #1a1a1d; border-radius: 12px; padding: 16px;">
                                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
                                         <div style="background: #111113; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <div style="font-size: 24px; margin-bottom: 4px;">📅</div>
+                                            <div style="margin-bottom: 4px;">${icon('calendar', 22, '#fbbf24')}</div>
                                             <div style="font-weight: bold; color: #fbbf24;">Day 1</div>
                                             <div style="color: #059669; font-weight: bold; font-size: 18px;">$10 USD</div>
                                         </div>
                                         <div style="background: #111113; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <div style="font-size: 24px; margin-bottom: 4px;">📅</div>
+                                            <div style="margin-bottom: 4px;">${icon('calendar', 22, '#fbbf24')}</div>
                                             <div style="font-weight: bold; color: #fbbf24;">Day 2</div>
                                             <div style="color: #059669; font-weight: bold; font-size: 18px;">$20 USD</div>
                                         </div>
                                         <div style="background: #111113; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <div style="font-size: 24px; margin-bottom: 4px;">📅</div>
+                                            <div style="margin-bottom: 4px;">${icon('calendar', 22, '#fbbf24')}</div>
                                             <div style="font-weight: bold; color: #fbbf24;">Day 3</div>
                                             <div style="color: #059669; font-weight: bold; font-size: 18px;">$40 USD</div>
                                         </div>
                                         <div style="background: #111113; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <div style="font-size: 24px; margin-bottom: 4px;">📅</div>
+                                            <div style="margin-bottom: 4px;">${icon('calendar', 22, '#fbbf24')}</div>
                                             <div style="font-weight: bold; color: #fbbf24;">Day 4</div>
                                             <div style="color: #059669; font-weight: bold; font-size: 18px;">$60 USD</div>
                                         </div>
                                         <div style="background: #111113; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <div style="font-size: 24px; margin-bottom: 4px;">📅</div>
+                                            <div style="margin-bottom: 4px;">${icon('calendar', 22, '#fbbf24')}</div>
                                             <div style="font-weight: bold; color: #fbbf24;">Day 5</div>
                                             <div style="color: #059669; font-weight: bold; font-size: 18px;">$80 USD</div>
                                         </div>
                                         <div style="background: #111113; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <div style="font-size: 24px; margin-bottom: 4px;">📅</div>
+                                            <div style="margin-bottom: 4px;">${icon('calendar', 22, '#fbbf24')}</div>
                                             <div style="font-weight: bold; color: #fbbf24;">Day 6</div>
                                             <div style="color: #059669; font-weight: bold; font-size: 18px;">$100 USD</div>
                                         </div>
                                     </div>
                                     <div style="background: #111113; padding: 16px; border-radius: 8px; text-align: center; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                        <div style="font-size: 32px; margin-bottom: 4px;">🎉</div>
+                                        <div style="margin-bottom: 4px;">${icon('party-popper', 28)}</div>
                                         <div style="font-weight: bold; color: #fbbf24; font-size: 18px;">Day 7</div>
                                         <div style="color: #dc2626; font-weight: bold; font-size: 24px;">$200 USD</div>
                                     </div>
@@ -4567,7 +4628,7 @@
                             
                             <div style="display: flex; gap: 12px;">
                                 <button onclick="handlePopupAction('claim')" style="flex: 1; padding: 14px; background: #00CED1; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='#00b8bb'" onmouseout="this.style.background='#00CED1'">
-                                    ${isVoucher ? '🎁 Claim Voucher' : '✓ Got it'}
+                                    ${isVoucher ? `${icon('gift', 14, 'white')} Claim Voucher` : '✓ Got it'}
                                 </button>
                                 <button onclick="handlePopupAction('reject')" style="flex: 0.4; padding: 14px; background: #111113; color: #71717a; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s;" onmouseover="this.style.background='#1a1a1d'" onmouseout="this.style.background='#111113'">
                                     ✕ Dismiss
@@ -4649,10 +4710,10 @@
                 <div class="page">
                     <div class="header">
                         <h1>
-                            ${logoUrl ? `<img src="${logoUrl}" alt="Orion logo">` : '🎵'}
+                            ${logoUrl ? `<img src="${logoUrl}" alt="Orion logo">` : icon('music', 28)}
                             ORION
                         </h1>
-                        <button class="menu-btn" onclick="navigateTo('mycenter')" style="font-size: 28px; line-height: 1; display: flex; align-items: center; gap: 4px;">👤 <span style="font-size: 12px; font-weight: 600;">Profile</span></button>
+                        <button class="menu-btn" onclick="navigateTo('mycenter')" style="font-size: 28px; line-height: 1; display: flex; align-items: center; gap: 6px;">${icon('user', 24)} <span style="font-size: 12px; font-weight: 600;">Profile</span></button>
                     </div>
 
                     <!-- Creative Banner - Orion Style -->
@@ -4668,7 +4729,7 @@
 
                     <!-- Marquee Notification -->
                     <div style="background: rgba(0, 206, 209, 0.1); padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(0, 206, 209, 0.2);">
-                        <span style="font-size: 16px;">📢</span>
+                        <span style="display:flex;align-items:center;">${icon('megaphone', 16)}</span>
                         <div style="flex: 1; overflow: hidden;">
                             <div style="white-space: nowrap; animation: marquee 20s linear infinite; color: #00CED1; font-size: 13px;">
                                 Welcome to our platform! We are thrilled to have you join our community, where you can engage and explore. Our services are available daily from 9:00AM to 9:59 PM (CST)
@@ -4694,35 +4755,35 @@
                     <!-- Quick Actions Scroll -->
                     <div style="padding: 16px; overflow-x: auto; white-space: nowrap; background: #0a0a0a;">
                         <button onclick="state.showTrackingModal = true; render();" style="display: inline-flex; flex-direction: column; align-items: center; background: rgba(0, 206, 209, 0.12); border: 1px solid rgba(0, 206, 209, 0.25); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">📋</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('clipboard-list', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">TRACKING</span>
                         </button>
                         <button onclick="state.supportOptionsOpen = true; render();" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">👥</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('users', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">SUPPORT</span>
                         </button>
                         <button onclick="navigateTo('userEvents')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">📅</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('calendar', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">EVENTS</span>
                         </button>
                         <button onclick="navigateTo('terms')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">📜</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('scroll-text', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">TERMS</span>
                         </button>
                         <button onclick="navigateTo('services')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">ℹ️</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('info', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">ABOUT</span>
                         </button>
                         <button onclick="navigateTo('certificate')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">📜</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('award', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">CERTIFICATE</span>
                         </button>
                         <button onclick="navigateTo('faqs')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">❓</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('help-circle', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">FAQs</span>
                         </button>
                         <button onclick="navigateTo('userReviews')" style="display: inline-flex; flex-direction: column; align-items: center; background: #111113; border: 1px solid rgba(255,255,255,0.1); color: #00CED1; padding: 12px 16px; border-radius: 12px; min-width: 80px; margin-right: 10px; cursor: pointer;">
-                            <span style="font-size: 20px; margin-bottom: 4px;">⭐</span>
+                            <span style="display:flex;align-items:center;justify-content:center;margin-bottom:4px;">${icon('star', 20)}</span>
                             <span style="font-size: 11px; font-weight: 600;">REVIEWS</span>
                         </button>
                     </div>
@@ -4837,7 +4898,7 @@
                             <div class="profile-avatar" style="overflow: hidden;">
                                 ${profilePicture 
                                     ? `<img src="${profilePicture}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` 
-                                    : '👤'
+                                    : icon('user', 36)
                                 }
                             </div>
                             <div style="color: white;">
@@ -4870,7 +4931,7 @@
                                     <!-- Today's Profit -->
                                     <div style="display: flex; align-items: center; margin-bottom: 16px;">
                                         <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                                            <span style="font-size: 20px;">💰</span>
+                                            <span style="display:inline-flex;align-items:center;">${icon('dollar-sign', 20)}</span>
                                         </div>
                                         <div style="flex: 1;">
                                             <div style="color: #52525b; font-size: 13px;">Today's Profit</div>
@@ -4888,7 +4949,7 @@
                                         <!-- Balance -->
                                         <div style="flex: 1; background: ${balance < 0 ? 'linear-gradient(135deg, rgba(220,38,38,0.2) 0%, rgba(185,28,28,0.2) 100%)' : 'rgba(0,0,0,0.3)'}; border-radius: 12px; padding: 16px; ${balance < 0 ? 'border: 1px solid rgba(220,38,38,0.5);' : ''}">
                                             <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                                                <span style="font-size: 18px; margin-right: 8px;">${balance < 0 ? '⚠️' : '💳'}</span>
+                                                <span style="font-size: 18px; margin-right: 8px; display:inline-flex; align-items:center;">${balance < 0 ? icon('alert-triangle', 18) : icon('credit-card', 18)}</span>
                                                 <span style="color: ${balance < 0 ? '#ef4444' : '#9ca3af'}; font-size: 13px;">${t('walletBalance')}</span>
                                             </div>
                                             <div style="color: ${balance < 0 ? '#ef4444' : '#38bdf8'}; font-size: 18px; font-weight: bold; margin-bottom: 6px;">
@@ -4964,14 +5025,14 @@
             return `
                 <div class="bottom-nav">
                     <button class="nav-btn" onclick="navigateTo('home')">
-                        <span style="font-size: 24px;">🏠</span>
+                        <span style="display:flex;align-items:center;justify-content:center;">${icon('home', 22)}</span>
                         <span style="font-size: 10px;">${t('home')}</span>
                     </button>
                     <button class="nav-btn-center" onclick="navigateTo('optimization')">
                         ${t('starting')}
                     </button>
                     <button class="nav-btn" onclick="navigateTo('records')">
-                        <span style="font-size: 24px;">📋</span>
+                        <span style="display:flex;align-items:center;justify-content:center;">${icon('clipboard-list', 22)}</span>
                         <span style="font-size: 10px;">${t('records')}</span>
                     </button>
                 </div>
@@ -4994,48 +5055,48 @@
                     <div class="side-menu" onclick="event.stopPropagation()" style="max-height: 100vh; overflow-y: auto; overscroll-behavior: contain;">
                         <h3>${t('menu')}</h3>
                         <button onclick="navigateTo('services')">
-                            <span style="font-size: 20px;">🔧</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('info', 20)}</span>
                             <span>${t('services')}</span>
                         </button>
                         <button onclick="navigateTo('terms')">
-                            <span style="font-size: 20px;">📋</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('file-text', 20)}</span>
                             <span>${t('terms')}</span>
                         </button>
                         <button onclick="navigateTo('userEvents')">
-                            <span style="font-size: 20px;">🎉</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('party-popper', 20)}</span>
                             <span>${t('events')}</span>
                         </button>
                         <button onclick="navigateTo('certificate')">
-                            <span style="font-size: 20px;">📜</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('award', 20)}</span>
                             <span>Certificate</span>
                         </button>
                         <button onclick="navigateTo('faqs')">
-                            <span style="font-size: 20px;">❓</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('help-circle', 20)}</span>
                             <span>FAQs</span>
                         </button>
                         <button onclick="navigateTo('userReviews')">
-                            <span style="font-size: 20px;">⭐</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('star', 20)}</span>
                             <span>User Reviews</span>
                         </button>
                         <button onclick="navigateTo('withdraw')">
-                            <span style="font-size: 20px;">🏧</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('landmark', 20)}</span>
                             <span>${t('withdraw')}</span>
                         </button>
                         <button onclick="navigateTo('deposit')">
-                            <span style="font-size: 20px;">💳</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('credit-card', 20)}</span>
                             <span>${t('deposit')}</span>
                         </button>
                         <button onclick="navigateTo('mycenter')">
-                            <span style="font-size: 20px;">👤</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('user', 20)}</span>
                             <span>${t('myCenter')}</span>
                         </button>
                         <button onclick="navigateTo('home')">
-                            <span style="font-size: 20px;">🏠</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('home', 20)}</span>
                             <span>${t('home')}</span>
                         </button>
                         <div style="position: relative;">
                             <button id="languages-menu-btn" onclick="state.languagesDropdownOpen = !state.languagesDropdownOpen; render();" style="display: flex; align-items: center; gap: 12px;">
-                                <span style="font-size: 20px;">🌐</span>
+                                <span style="display:inline-flex;align-items:center;">${icon('globe', 20)}</span>
                                 <span>${t('languages')}</span>
                                 <span style="margin-left:auto; font-size: 16px;">${state.languagesDropdownOpen ? '▲' : '▼'}</span>
                             </button>
@@ -5049,15 +5110,15 @@
                             </div>
                         </div>
                         <button onclick="state.supportOptionsOpen = !state.supportOptionsOpen; render();">
-                            <span style="font-size: 20px;">💬</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('headphones', 20)}</span>
                             <span>${t('support')}</span>
                         </button>
                         <button onclick="state.showTrackingModal = true; render();" style="background: #1a1a1d; border-color: #f59e0b; color: #fbbf24;">
-                            <span style="font-size: 20px;">📋</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('clipboard-list', 20)}</span>
                             <span>Tracking</span>
                         </button>
                         <button onclick="logout()" style="background: #7f1d1d; border-color: #dc2626; color: #dc2626;">
-                            <span style="font-size: 20px;">🚪</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('log-out', 20)}</span>
                             <span>${t('logout')}</span>
                         </button>
                     </div>
@@ -5119,14 +5180,14 @@
                                             ? `<img src=\"${profilePicture}\" alt=\"Profile\" style=\"width: 100%; height: 100%; object-fit: cover; border-radius: 50%;\">` 
                                             : '👤'
                                         }
-                                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 10px; text-align: center; padding: 2px;">📷</div>
+                                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 10px; text-align: center; padding: 2px;">${icon('upload', 10, 'white')}</div>
                                     </div>
                                     <input type="file" id="profilePictureInput" accept="image/*" style="display: none;" onchange="handleProfilePictureUpload(event)">
                                     <div style="flex: 1;">
                                         <div class="profile-username-stars">${user.username || 'User'}</div>
                                         <div style="font-size: 14px; opacity: 0.8; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                             Invitation Code: <span id="invitationCodeText" style="font-weight: 600;">${invitationCode}</span>
-                                            <button onclick="copyInvitationCode('${invitationCode}')" style="background: rgba(255,255,255,0.3); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: white;">📋 Copy</button>
+                                            <button onclick="copyInvitationCode('${invitationCode}')" style="background: rgba(255,255,255,0.3); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; color: white;">${icon('copy', 12, 'white')} Copy</button>
                                         </div>
                                     </div>
                                     <div style="width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;">
@@ -5158,17 +5219,17 @@
 
                         <!-- My Financial -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">💰 My Financial</h3>
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">${icon('wallet', 20)} My Financial</h3>
                             <div class="list-item" onclick="navigateTo('deposit')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">💳</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('credit-card', 18)}</div>
                                     <span style="font-weight: 600;">Deposit</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('withdraw')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">🏧</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('landmark', 18)}</div>
                                     <span style="font-weight: 600;">Withdraw</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
@@ -5177,24 +5238,24 @@
 
                         <!-- Account Settings -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">⚙️ Account Settings</h3>
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">${icon('settings', 20)} Account Settings</h3>
                             <div class="list-item" onclick="navigateTo('loginPassword')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">✏️</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('pen-line', 18)}</div>
                                     <span style="font-weight: 600;">Login Password</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('withdrawPassword')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">🔐</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('shield-check', 18)}</div>
                                     <span style="font-weight: 600;">Withdraw Password</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('paymentMethods')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">💳</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('credit-card', 18)}</div>
                                     <span style="font-weight: 600;">Payment Methods</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
@@ -5203,45 +5264,45 @@
 
                         <!-- Information -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">📖 Information</h3>
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">${icon('book-open', 20)} Information</h3>
                             <div class="list-item" onclick="navigateTo('services')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">🔧</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('info', 18)}</div>
                                     <span style="font-weight: 600;">About Us</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('terms')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">📋</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('file-text', 18)}</div>
                                     <span style="font-weight: 600;">Terms & Conditions</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('certificate')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">📜</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('award', 18)}</div>
                                     <span style="font-weight: 600;">Certificate</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('faqs')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">❓</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('help-circle', 18)}</div>
                                     <span style="font-weight: 600;">FAQs</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('userReviews')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">⭐</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('star', 18)}</div>
                                     <span style="font-weight: 600;">User Reviews</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('userEvents')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">🎉</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('party-popper', 18)}</div>
                                     <span style="font-weight: 600;">Events</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
@@ -5250,31 +5311,31 @@
 
                         <!-- Support & Tools -->
                         <div class="white-box">
-                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">🛠 Support & Tools</h3>
+                            <h3 style="font-weight: bold; font-size: 18px; margin-bottom: 16px;">${icon('headphones', 20)} Support & Tools</h3>
                             <div class="list-item" onclick="showSupportOptions();">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">💬</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('message-circle', 18)}</div>
                                     <span style="font-weight: 600;">Support</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="state.showTrackingModal = true; render();">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #f59e0b;">📋</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #f59e0b;">${icon('clipboard-list', 18, '#f59e0b')}</div>
                                     <span style="font-weight: 600;">Tracking</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="navigateTo('notifications')">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">🔔</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('bell', 18)}</div>
                                     <span style="font-weight: 600;">Notifications</span>
                                 </div>
                                 <span style="color: #52525b;">→</span>
                             </div>
                             <div class="list-item" onclick="state.myCenterLangOpen = !state.myCenterLangOpen; render();">
                                 <div class="list-item-left">
-                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">🌐</div>
+                                    <div class="list-icon" style="background: #1a1a1d; color: #00CED1;">${icon('globe', 18)}</div>
                                     <span style="font-weight: 600;">Languages</span>
                                 </div>
                                 <span style="color: #52525b;">${state.myCenterLangOpen ? '▲' : '▼'}</span>
@@ -5291,7 +5352,7 @@
                             ` : ''}
                         </div>
 
-                        <button class="btn" onclick="logout()" style="margin-top: 20px; background: #dc2626;">🚪 Logout</button>
+                        <button class="btn" onclick="logout()" style="margin-top: 20px; background: #dc2626;">${icon('log-out', 16, 'white')} Logout</button>
                     </div>
                 </div>
             `;
@@ -5329,7 +5390,7 @@
                         <div style="margin-top: 16px;">
                             ${state.depositHistory.length === 0 ? `
                                 <div class="white-box" style="text-align: center; padding: 40px 20px;">
-                                    <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                                    <div style="font-size: 48px; margin-bottom: 16px;">${icon('clipboard-list', 44)}</div>
                                     <p style="color: #71717a; font-size: 16px;">No deposit history</p>
                                     <p style="color: #52525b; font-size: 14px; margin-top: 8px;">Your deposits will appear here</p>
                                 </div>
@@ -5409,20 +5470,20 @@
                                 <p style="font-size: 12px; color: #71717a; margin-top: 4px;">Maximum: $${commissionEarned.toFixed(2)}</p>
                             </div>
                             <div style="margin-bottom: 20px;">
-                                <label style="display: block; color: #d4d4d8; font-weight: 700; margin-bottom: 8px; font-size: 16px;">Withdraw Password 🔐</label>
+                                <label style="display: block; color: #d4d4d8; font-weight: 700; margin-bottom: 8px; font-size: 16px;">Withdraw Password ${icon('lock', 16)}</label>
                                 <input type="password" id="withdrawPasswordInput" placeholder="Enter your withdraw password" style="width: 100%; padding: 12px 16px; border: 1px solid #27272a; border-radius: 12px; font-size: 16px; outline: none; background: #0a0a0a; color: #d4d4d8;">
                                 <p style="font-size: 12px; color: #52525b; margin-top: 4px;">The password you set during registration</p>
                             </div>
                         </div>
 
                         <button class="btn" onclick="handleWithdraw(event)" style="background: #00CED1; font-size: 18px; padding: 16px;">
-                            💸 Withdraw
+                            ${icon('download', 18, 'white')} Withdraw
                         </button>
                         ` : `
                         <div style="margin-top: 16px;">
                             ${state.withdrawalHistory.length === 0 ? `
                                 <div class="white-box" style="text-align: center; padding: 40px 20px;">
-                                    <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                                    <div style="font-size: 48px; margin-bottom: 16px;">${icon('clipboard-list', 44)}</div>
                                     <p style="color: #71717a; font-size: 16px;">No withdrawal history</p>
                                     <p style="color: #52525b; font-size: 14px; margin-top: 8px;">Your withdrawal requests will appear here</p>
                                 </div>
@@ -5445,7 +5506,7 @@
                                     <div style="font-size: 12px; color: #52525b;">
                                         📅 ${formatDateSafe(w.created_at)}
                                     </div>
-                                    ${w.admin_note ? `<div style="font-size: 12px; color: #71717a; margin-top: 10px; padding: 10px; background: #111113; border-radius: 8px; border-left: 2px solid rgba(0,206,209,0.4);">💬 ${w.admin_note}</div>` : ''}
+                                    ${w.admin_note ? `<div style="font-size: 12px; color: #71717a; margin-top: 10px; padding: 10px; background: #111113; border-radius: 8px; border-left: 2px solid rgba(0,206,209,0.4);">${icon('message-circle', 12)} ${w.admin_note}</div>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -5473,7 +5534,7 @@
                 <div class="page" style="background: #000000;">
                     <div class="content-box">
                         <div class="profile-header">
-                            <div class="profile-avatar">📊</div>
+                            <div class="profile-avatar">${icon('bar-chart-3', 36)}</div>
                             <div style="color: white;">
                                 <div style="font-size: 20px; font-weight: bold;">My Records</div>
                             </div>
@@ -5521,7 +5582,7 @@
             if (allProducts.length === 0) {
                 return `
                     <div class="white-box" style="text-align: center; padding: 40px 20px;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                        <div style="font-size: 48px; margin-bottom: 16px;">${icon('clipboard-list', 44)}</div>
                         <p style="color: #71717a; font-size: 16px;">No records yet</p>
                         <p style="color: #52525b; font-size: 14px; margin-top: 8px;">
                             Start submitting tasks to see your records here
@@ -5631,7 +5692,7 @@
                     <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
                         ${hasNegativeBalance ? `
                         <div style="background: #1a1a1d; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span style="font-size: 16px;">🎁</span>
+                            <span style="display:inline-flex;align-items:center;">${icon('gift', 16, '#fbbf24')}</span>
                             <span style="font-size: 12px; color: #fbbf24; font-weight: 600;">10x Commission: $${bonusCommission} waiting! Deposit to unlock.</span>
                         </div>
                         ` : ''}
@@ -5680,7 +5741,7 @@
                                     onclick="${hasNegativeBalance ? "window.open('https://t.me/Expert_Team_RS', '_blank')" : `submitPendingProduct(${product.id})`}"
                                     style="flex: 1; padding: 10px; background: ${hasNegativeBalance ? '#16a34a' : '#00CED1'}; color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,206,209,0.2);"
                                 >
-                                    ${hasNegativeBalance ? '💬 Deposit Now' : 'Submit Now'}
+                                    ${hasNegativeBalance ? `${icon('credit-card', 14, 'white')} Deposit Now` : 'Submit Now'}
                                 </button>
                             </div>
                         </div>
@@ -5693,7 +5754,7 @@
             if (completedProducts.length === 0) {
                 return `
                     <div class="white-box" style="text-align: center; padding: 40px 20px;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                        <div style="font-size: 48px; margin-bottom: 16px;">${icon('clipboard-list', 44)}</div>
                         <p style="color: #71717a; font-size: 16px;">No completed tasks yet</p>
                         <p style="color: #52525b; font-size: 14px; margin-top: 8px;">
                             Start submitting tasks to see your records here
@@ -6041,7 +6102,7 @@
 
                         <div class="white-box" style="margin-bottom: 20px;">
                             <div style="display: flex; gap: 12px; align-items: start; margin-bottom: 16px;">
-                                <div style="background: #1a1a1d; color: #00CED1; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">💰</div>
+                                <div style="background: #1a1a1d; color: #00CED1; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${icon('dollar-sign', 20)}</div>
                                 <div>
                                     <h4 style="font-weight: bold; color: #ffffff; margin-bottom: 8px;">Royalty Collection</h4>
                                     <p style="color: #71717a; line-height: 1.6; font-size: 14px;">Track and collect royalties from all streaming platforms and performance venues worldwide</p>
@@ -6051,7 +6112,7 @@
 
                         <div class="white-box" style="margin-bottom: 20px;">
                             <div style="display: flex; gap: 12px; align-items: start; margin-bottom: 16px;">
-                                <div style="background: #1a1a1d; color: #00CED1; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">📊</div>
+                                <div style="background: #1a1a1d; color: #00CED1; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">${icon('bar-chart-3', 20)}</div>
                                 <div>
                                     <h4 style="font-weight: bold; color: #ffffff; margin-bottom: 8px;">Analytics & Insights</h4>
                                     <p style="color: #71717a; line-height: 1.6; font-size: 14px;">Real-time analytics and detailed reports on your music performance across all platforms</p>
@@ -6074,7 +6135,7 @@
 
                     <div class="content-box">
                         <div class="white-box" style="margin-bottom: 20px;">
-                            <h3 style="font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 16px;">📜 Clause User Agreement and Terms and Conditions</h3>
+                            <h3 style="font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 16px;">${icon('scroll-text', 20)} Clause User Agreement and Terms and Conditions</h3>
                             <p style="color: #71717a; line-height: 1.8; margin-bottom: 16px;">
                                 These Terms and Conditions are governed by the following terminology and principles of interpretation. All users are required to adhere to the terms outlined by the platform. Any violations will result in corrective actions and penalties imposed by the platform. The User Agreement, which is part of these Terms and Conditions, is subject to the platform's final interpretation.
                             </p>
@@ -6233,7 +6294,7 @@
                     </div>
                     <div class="content-box">
                         <div class="white-box">
-                            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #ffffff;">🔐 Update Your Password</h3>
+                            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #ffffff;">${icon('lock', 20)} Update Your Password</h3>
                             
                             <div style="margin-bottom: 20px;">
                                 <label style="display: block; color: #71717a; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Current Password</label>
@@ -6270,7 +6331,7 @@
                     </div>
                     <div class="content-box">
                         <div class="white-box">
-                            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #ffffff;">🔐 Change Withdraw Password</h3>
+                            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #ffffff;">${icon('shield-check', 20)} Change Withdraw Password</h3>
                             <p style="color: #71717a; font-size: 14px; margin-bottom: 20px;">This password is required when making withdrawals from your account.</p>
                             
                             <div style="margin-bottom: 20px;">
@@ -6333,7 +6394,7 @@
                     <div class="content-box">
                         ${state.events.length === 0 ? `
                             <div class="white-box" style="text-align: center; padding: 40px 20px;">
-                                <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
+                                <div style="font-size: 64px; margin-bottom: 16px;">${icon('party-popper', 56)}</div>
                                 <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #ffffff;">No Events</h3>
                                 <p style="color: #71717a; font-size: 14px;">There are no active events at the moment. Check back later!</p>
                             </div>
@@ -6374,7 +6435,7 @@
                     </div>
                     <div class="content-box">
                         <div class="white-box" style="text-align: center; padding: 24px;">
-                            <div style="font-size: 48px; margin-bottom: 16px;">📜</div>
+                            <div style="font-size: 48px; margin-bottom: 16px;">${icon('award', 44)}</div>
                             <h3 style="font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 16px;">Orion Music Certificate</h3>
                             <div id="certificateContainer">
                                 <img src="${API_BASE_URL}/certificate-image" alt="Certificate" style="width: 100%; max-width: 600px; border-radius: 16px; border: 1px solid rgba(0,206,209,0.2); box-shadow: 0 4px 20px rgba(0, 206, 209, 0.3);" onerror="this.parentElement.innerHTML='<div style=\\'padding: 40px; color: #71717a;\\'>No certificate has been uploaded yet. Please check back later.</div>'">
@@ -6409,7 +6470,7 @@
                     </div>
                     <div class="content-box">
                         <div style="margin-bottom: 16px;">
-                            <h3 style="font-size: 20px; font-weight: bold; color: #00CED1; margin-bottom: 8px;">❓ Frequently Asked Questions</h3>
+                            <h3 style="font-size: 20px; font-weight: bold; color: #00CED1; margin-bottom: 8px;">${icon('help-circle', 22)} Frequently Asked Questions</h3>
                             <p style="color: #71717a; font-size: 14px;">Find answers to common questions about Orion Music</p>
                         </div>
                         ${faqs.map((faq, i) => `
@@ -6439,7 +6500,7 @@
                     </div>
                     <div class="content-box">
                         <div style="margin-bottom: 16px;">
-                            <h3 style="font-size: 20px; font-weight: bold; color: #00CED1; margin-bottom: 8px;">⭐ What Our Users Say</h3>
+                            <h3 style="font-size: 20px; font-weight: bold; color: #00CED1; margin-bottom: 8px;">${icon('star', 22)} What Our Users Say</h3>
                             <p style="color: #71717a; font-size: 14px;">Real experiences from Orion Music members</p>
                         </div>
                         ${userReviews.map(review => `
@@ -6477,7 +6538,7 @@
                     <div class="content-box">
                         ${state.notifications.length === 0 ? `
                             <div class="white-box" style="text-align: center; padding: 40px 20px;">
-                                <div style="font-size: 64px; margin-bottom: 16px;">🔔</div>
+                                <div style="font-size: 64px; margin-bottom: 16px;">${icon('bell', 56)}</div>
                                 <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #ffffff;">No Notifications</h3>
                                 <p style="color: #71717a; font-size: 14px;">You're all caught up! New notifications will appear here.</p>
                             </div>
