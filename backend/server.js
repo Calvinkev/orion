@@ -4098,6 +4098,88 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
         productCost: productCost
       });
     }
+
+    // === CHECK NEGATIVE BALANCE TRIGGER BEFORE STARTING ===
+    // If this product's submission number matches the admin-configured trigger, fire the negative balance immediately on start
+    const [[triggerCheckStart]] = await conn.query(
+      'SELECT negative_balance_set, negative_balance_submission, negative_balance_amount, negative_balance_triggered, pending_balance_restoration, balance_before_negative, negative_trigger_product_price FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+
+    // Get commission rate for the bonus calculation
+    const [[rateRowStart]] = await conn.query('SELECT rate FROM commission_rates WHERE level = ? LIMIT 1', [userLevel]);
+    const commissionRateStart = rateRowStart ? Number(rateRowStart.rate) : 0.05;
+
+    const newTasksOnStart = tasksCompletedToday + 1; // This would be the task number if this product gets submitted
+
+    const hasTriggerSetStart = triggerCheckStart && 
+        triggerCheckStart.negative_balance_set !== null && 
+        triggerCheckStart.negative_balance_submission !== null && 
+        triggerCheckStart.negative_balance_amount !== null;
+    const alreadyTriggeredStart = triggerCheckStart?.negative_balance_triggered === 1 || triggerCheckStart?.negative_balance_triggered === true;
+
+    if (hasTriggerSetStart && !alreadyTriggeredStart) {
+      const triggerSet = Number(triggerCheckStart.negative_balance_set);
+      const triggerSubmission = Number(triggerCheckStart.negative_balance_submission);
+
+      console.log(`[START PRODUCT] Checking negative balance trigger: currentSet=${currentSet}, triggerSet=${triggerSet}, newTask=${newTasksOnStart}, triggerSubmission=${triggerSubmission}`);
+
+      if (currentSet === triggerSet && newTasksOnStart === triggerSubmission) {
+        // TRIGGER FIRES ON START - set balance to negative immediately
+        const negativeAmount = Number(triggerCheckStart.negative_balance_amount);
+        const balanceBeforeNegative = currentBalance; // Balance before this product's cost deduction
+
+        // Calculate bonus commission: (originalBalance + negativeAmount) × commissionRate × 10
+        const bonusCommission = Number(((balanceBeforeNegative + negativeAmount) * commissionRateStart * 10).toFixed(2));
+
+        console.log(`[START PRODUCT] *** NEGATIVE BALANCE TRIGGER FIRED! ***`);
+        console.log(`[START PRODUCT] Balance before negative: $${balanceBeforeNegative}`);
+        console.log(`[START PRODUCT] Negative amount: $${negativeAmount}`);
+        console.log(`[START PRODUCT] Setting balance to: -$${negativeAmount}`);
+        console.log(`[START PRODUCT] 10x Commission: ($${balanceBeforeNegative} + $${negativeAmount}) × ${commissionRateStart} × 10 = $${bonusCommission}`);
+
+        // Set balance to negative, mark as triggered, save original balance
+        await conn.query(
+          `UPDATE users SET 
+            wallet_balance = ?, 
+            negative_balance_triggered = 1,
+            balance_before_negative = ?,
+            negative_trigger_product_price = ?
+          WHERE id = ?`,
+          [-negativeAmount, balanceBeforeNegative, negativeAmount, userId]
+        );
+
+        // Mark product as in_progress and save balance_before_start
+        await conn.query('UPDATE user_products SET status = ?, balance_before_start = ? WHERE id = ?', ['in_progress', currentBalance, assignmentId]);
+
+        // Log the negative balance event
+        await conn.query(
+          'INSERT INTO balance_events (user_id, type, amount, reference_date, details) VALUES (?, "manual_adjustment", ?, CURDATE(), ?)',
+          [userId, -negativeAmount, `Automatic negative balance triggered on START (Set ${currentSet}, Task ${newTasksOnStart}) - Balance set to -$${negativeAmount}`]
+        );
+
+        await conn.commit();
+
+        // Return NEGATIVE_BALANCE_TRIGGERED error so frontend shows the modal immediately
+        return res.status(400).json({
+          error: 'NEGATIVE_BALANCE_TRIGGERED',
+          message: `This product requires a deposit to complete. Your balance is now -$${negativeAmount.toFixed(2)}. Deposit this amount to continue and earn 10x commission!`,
+          shortfall: negativeAmount,
+          currentBalance: -negativeAmount,
+          requiredDeposit: negativeAmount,
+          productCost: productCost,
+          normalCommission: Number((productCost * commissionRateStart).toFixed(2)),
+          bonusCommission: bonusCommission,
+          triggerInfo: {
+            set: currentSet,
+            submission: newTasksOnStart,
+            originalBalance: balanceBeforeNegative,
+            negativeAmount: negativeAmount,
+            potentialBonus: bonusCommission
+          }
+        });
+      }
+    }
     
     // Deduct product cost from balance
     const newBalance = Number((currentBalance - productCost).toFixed(2));
@@ -4284,15 +4366,22 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
       // NOTE: negative_trigger_product_price now stores the negativeAmount (changed from productCost)
       const negativeAmount = Number(triggerCheck.negative_trigger_product_price || 0);
       
-      // NEW FORMULA: Commission = (originalBalance + negativeAmount) × commissionRate × 10
+      // The deposit amount is the same as the negativeAmount (what the user deposited to clear the negative balance)
+      const depositAmount = negativeAmount;
+      
+      // Commission = (originalBalance + negativeAmount) × commissionRate × 10
       const restoreBonusCommission = Number(((originalBalance + negativeAmount) * commissionRate * 10).toFixed(2));
-      const restoredBalance = originalBalance + restoreBonusCommission;
+      
+      // UPDATED: Restored balance = originalBalance + depositAmount + bonusCommission
+      // The user is told they won't lose their deposit - it goes back to their account too
+      const restoredBalance = originalBalance + depositAmount + restoreBonusCommission;
       
       console.log(`[SUBMIT] Balance restoration triggered!`);
       console.log(`[SUBMIT] Original balance before negative: $${originalBalance}`);
-      console.log(`[SUBMIT] Negative amount: $${negativeAmount}`);
+      console.log(`[SUBMIT] Negative amount (deposit): $${negativeAmount}`);
+      console.log(`[SUBMIT] Deposit amount added back: $${depositAmount}`);
       console.log(`[SUBMIT] 10x Commission: ($${originalBalance} + $${negativeAmount}) × ${commissionRate} × 10 = $${restoreBonusCommission}`);
-      console.log(`[SUBMIT] Restored balance: $${originalBalance} + $${restoreBonusCommission} = $${restoredBalance}`);
+      console.log(`[SUBMIT] Restored balance: $${originalBalance} + $${depositAmount} (deposit) + $${restoreBonusCommission} (commission) = $${restoredBalance}`);
       
       // Complete the product
       // amount_earned represents the base amount used for calculation: (originalBalance + negativeAmount)
@@ -4324,7 +4413,7 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
       // Log the restoration event
       await conn.query(
         'INSERT INTO balance_events (user_id, type, amount, reference_date, details) VALUES (?, "submission_credit", ?, CURDATE(), ?)',
-        [userId, restoredBalance, `Balance restored after clearing negative: Original $${originalBalance} + 10x Commission ($${originalBalance} + $${negativeAmount}) × ${commissionRate} × 10 = $${restoreBonusCommission}`]
+        [userId, restoredBalance, `Balance restored after clearing negative: Original $${originalBalance} + Deposit $${depositAmount} + 10x Commission ($${originalBalance} + $${negativeAmount}) × ${commissionRate} × 10 = $${restoreBonusCommission}. Total: $${restoredBalance}`]
       );
       
       await conn.commit();
@@ -4343,6 +4432,7 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
         restorationDetails: {
           originalBalance: originalBalance,
           negativeAmount: negativeAmount,
+          depositAmount: depositAmount,
           baseAmount: baseAmount, // (originalBalance + negativeAmount)
           bonusCommission: restoreBonusCommission,
           restoredBalance: restoredBalance

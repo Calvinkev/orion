@@ -3547,7 +3547,20 @@
                     }
                 } catch (error) {
                     
-                    if (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative'))) {
+                    if (error.error === 'NEGATIVE_BALANCE_TRIGGERED') {
+                        // Negative balance trigger fired on start - show triggered modal immediately
+                        const triggerData = {
+                            shortfall: error.shortfall,
+                            requiredDeposit: error.requiredDeposit,
+                            productCost: error.productCost,
+                            normalCommission: error.normalCommission,
+                            bonusCommission: error.bonusCommission,
+                            triggerInfo: error.triggerInfo
+                        };
+                        await loadDashboard(true); // silent load
+                        state.loadingProducts = false;
+                        showNegativeBalanceTriggeredModal(triggerData);
+                    } else if (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative'))) {
                         await loadDashboard(true); // silent load
                         state.showNegativeBalanceModal = true;
                         state.loadingProducts = false;
@@ -3692,9 +3705,10 @@
                     
                     // Check if this was a balance restoration (10x commission)
                     if (result.balanceRestored && result.restorationDetails) {
+                        const rd = result.restorationDetails;
                         showModal(
                             'Bonus Earned!', 
-                            `Congratulations! You earned 10x commission: $${result.restorationDetails.bonusCommission.toFixed(2)}! Your balance is now $${result.finalBalance.toFixed(2)}.`,
+                            `Congratulations! You earned 10x commission: $${rd.bonusCommission.toFixed(2)}! Your deposit of $${(rd.depositAmount || rd.negativeAmount || 0).toFixed(2)} has been returned to your account. Your balance is now $${result.finalBalance.toFixed(2)}.`,
                             'success',
                             'Awesome!'
                         );
@@ -3835,7 +3849,21 @@
                 }
             } catch (error) {
                 
-                if (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative'))) {
+                if (error.error === 'NEGATIVE_BALANCE_TRIGGERED') {
+                    // Negative balance trigger fired on start - show triggered modal immediately
+                    const triggerData = {
+                        shortfall: error.shortfall,
+                        requiredDeposit: error.requiredDeposit,
+                        productCost: error.productCost,
+                        normalCommission: error.normalCommission,
+                        bonusCommission: error.bonusCommission,
+                        triggerInfo: error.triggerInfo
+                    };
+                    await loadDashboard(true); // silent load
+                    state.assignedProducts = [];
+                    state.showingProducts = false;
+                    showNegativeBalanceTriggeredModal(triggerData);
+                } else if (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative'))) {
                     await loadDashboard(true); // silent load
                     state.assignedProducts = [];
                     state.showingProducts = false;
@@ -3947,6 +3975,10 @@
             const commissionRate = state.dashboard?.commissionRate || 0.05;
             const bonusCommission = ((originalBalance + storedNegativeAmount) * commissionRate * 10).toFixed(2);
             
+            // Total amount user will receive = original balance + deposit amount + bonus commission
+            // The deposit goes back to their account (they don't lose it)
+            const totalAfterClearing = (originalBalance + requiredDeposit + Number(bonusCommission)).toFixed(2);
+            
             // Product price is the base amount: original balance + negative amount
             const productPrice = (originalBalance + storedNegativeAmount).toFixed(2);
             
@@ -3968,6 +4000,17 @@
                                     <div style="font-weight: 600; color: #fbbf24; margin-bottom: 8px;">${icon('gift', 16, '#fbbf24')} 10x Commission: $${bonusCommission}</div>
                                     <div style="font-size: 13px; color: #fbbf24;">
                                         Deposit now to unlock your bonus earnings
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #1a1a1d; border: 1px solid rgba(22,163,106,0.3); border-radius: 12px; padding: 16px; margin: 0 0 16px 0; text-align: center;">
+                                    <div style="font-size: 12px; color: #71717a; margin-bottom: 4px;">Total you will receive after clearing</div>
+                                    <div style="color: #16a34a; font-weight: 700; font-size: 22px;">$${totalAfterClearing}</div>
+                                    <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
+                                        Original balance ($${originalBalance.toFixed(2)}) + Your deposit ($${requiredDeposit.toFixed(2)}) + Commission ($${bonusCommission})
+                                    </div>
+                                    <div style="font-size: 11px; color: #16a34a; margin-top: 6px; font-weight: 600;">
+                                        Your deposit goes back to your account!
                                     </div>
                                 </div>
                                 
@@ -4029,8 +4072,11 @@
                 bonusCommission = ((originalBalance + storedNegativeAmount) * commissionRate * 10);
             }
             
+            // Total amount user will receive = original balance + deposit amount + bonus commission
+            // The deposit goes back to their account (they don't lose it)
+            const totalAfterClearing = (originalBalance + negativeAmount + bonusCommission).toFixed(2);
+            
             // Product price for display: original balance + negative amount (this is the base for commission calculation)
-            // This is different from productCost - productCost is the actual product price, but display price is the commission base
             const productPrice = (originalBalance + storedNegativeAmount).toFixed(2);
             
             // Create modal HTML
@@ -4055,6 +4101,17 @@
                                     <div style="text-align: center; margin-top: 12px;">
                                         <div style="color: #16a34a; font-weight: 700; font-size: 24px;">$${bonusCommission.toFixed(2)}</div>
                                         <div style="color: #16a34a; font-size: 11px; font-weight: 600;">10x BONUS COMMISSION</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: #1a1a1d; border: 1px solid rgba(22,163,106,0.3); border-radius: 12px; padding: 16px; margin: 0 0 16px 0; text-align: center;">
+                                    <div style="font-size: 12px; color: #71717a; margin-bottom: 4px;">Total you will receive after clearing</div>
+                                    <div style="color: #16a34a; font-weight: 700; font-size: 22px;">$${totalAfterClearing}</div>
+                                    <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
+                                        Original balance ($${Number(originalBalance).toFixed(2)}) + Your deposit ($${negativeAmount.toFixed(2)}) + Commission ($${bonusCommission.toFixed(2)})
+                                    </div>
+                                    <div style="font-size: 11px; color: #16a34a; margin-top: 6px; font-weight: 600;">
+                                        Your deposit goes back to your account!
                                     </div>
                                 </div>
                                 
@@ -5591,67 +5648,58 @@
                 `;
             }
             
-            const userBalance = state.user?.wallet_balance || state.user?.balance || 0;
-            const hasNegativeBalance = userBalance < 0;
-            
+            const completedCount = allProducts.filter(p => p.status === 'completed').length;
+            const pendingCount = allProducts.filter(p => p.status === 'in_progress' || p.status === 'pending').length;
+            const totalCommission = allProducts.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.commission_earned || 0), 0);
             const commissionRate = state.dashboard?.commissionRate || 0.05;
             
-            return allProducts.map(product => {
-                const isCompleted = product.status === 'completed';
-                const isPending = product.status === 'in_progress';
-                const userLevel = state.user?.level || 1;
-                const productPrice = product.custom_price || product['level' + userLevel + '_price'] || 0;
-                const commission = isCompleted ? (product.commission_earned || 0) : Number((productPrice * commissionRate).toFixed(2));
-                const dataValue = isCompleted ? (product.amount_earned || 0) : Number(productPrice);
-                
-                return `
-                    <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${isCompleted ? '#10b981' : isPending && hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
-                        <!-- Product Image -->
-                        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-                            <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                        </div>
-                        
-                        <!-- Product Name -->
-                        <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">${product.name}</h3>
-                        
-                        <!-- Rating -->
-                        <div style="color: #fbbf24; font-size: 20px; margin-bottom: 14px;">★★★★★</div>
-                        
-                        <!-- Product Details -->
-                        <div style="background: #0a0a0a; border-radius: 12px; padding: 14px; margin-bottom: 14px; text-align: left;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                                <span style="font-size: 13px; color: #71717a;">Data Value</span>
-                                <span style="font-size: 14px; font-weight: 700; color: #ffffff;">USD ${Number(dataValue).toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                                <span style="font-size: 13px; color: #71717a;">Commission Profit(%)</span>
-                                <span style="font-size: 14px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                                <span style="font-size: 13px; color: #71717a;">Total Profit</span>
-                                <span style="font-size: 14px; font-weight: 700; color: #00CED1;">USD ${Number(commission).toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
-                                <span style="font-size: 13px; color: #71717a;">Rebates</span>
-                                <span style="font-size: 14px; font-weight: 700; color: #f59e0b;">${Number(dataValue).toFixed(0)} x ${(commissionRate * 100).toFixed(1)}</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Status Footer -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
-                            <div style="font-size: 12px; color: #52525b;">
-                                ${isCompleted 
-                                    ? `✓ Completed: ${formatDateSafe(product.submitted_at)}`
-                                    : `⏳ Started: ${formatDateSafe(product.assigned_date)}`
-                                }
-                            </div>
-                            <span style="background: ${isCompleted ? '#064e3b' : isPending && hasNegativeBalance ? '#fef2f2' : '#fef3c7'}; color: ${isCompleted ? '#34d399' : isPending && hasNegativeBalance ? '#dc2626' : '#d97706'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-                                ${isCompleted ? 'Completed' : isPending && hasNegativeBalance ? 'Deposit Required' : 'Pending'}
-                            </span>
-                        </div>
+            return `
+                <!-- Summary Cards -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div class="white-box" style="text-align: center; padding: 20px 16px;">
+                        <div style="margin-bottom: 10px;">${icon('check-circle', 32, '#10b981')}</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #10b981;">${completedCount}</div>
+                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">Completed</div>
                     </div>
-                `;
-            }).join('');
+                    <div class="white-box" style="text-align: center; padding: 20px 16px;">
+                        <div style="margin-bottom: 10px;">${icon('clock', 32, '#f59e0b')}</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">${pendingCount}</div>
+                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">Pending</div>
+                    </div>
+                </div>
+                
+                <div class="white-box" style="text-align: center; padding: 20px 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+                        ${icon('trending-up', 24, '#00CED1')}
+                        <span style="font-size: 14px; color: #71717a;">Total Commission Earned</span>
+                    </div>
+                    <div style="font-size: 26px; font-weight: 700; color: #00CED1;">$${totalCommission.toFixed(2)}</div>
+                </div>
+                
+                <div class="white-box" style="padding: 16px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 14px;">Product Summary</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 13px; color: #71717a;">Total Products</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #ffffff;">${allProducts.length}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 13px; color: #71717a;">Completed</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #10b981;">${completedCount}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 13px; color: #71717a;">Pending</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #f59e0b;">${pendingCount}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span style="font-size: 13px; color: #71717a;">Commission Rate</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+                        <span style="font-size: 13px; color: #71717a;">Completion Rate</span>
+                        <span style="font-size: 14px; font-weight: 700; color: #00CED1;">${allProducts.length > 0 ? Math.round((completedCount / allProducts.length) * 100) : 0}%</span>
+                    </div>
+                </div>
+            `;
         }
         
         function renderPendingRecords(pendingProducts) {
@@ -5682,6 +5730,12 @@
                     ? ((originalBalance + storedNegativeAmount) * commissionRate * 10).toFixed(2)
                     : (productPrice * commissionRate * 10).toFixed(2);
                 
+                // Total after clearing includes deposit amount going back to account
+                const depositAmount = hasNegativeBalance ? Math.abs(userBalance) : 0;
+                const totalAfterClearing = hasNegativeBalance 
+                    ? (originalBalance + depositAmount + Number(bonusCommission)).toFixed(2)
+                    : '0.00';
+                
                 const displayPrice = hasNegativeBalance 
                     ? (originalBalance + storedNegativeAmount).toFixed(2)
                     : Number(productPrice).toFixed(2);
@@ -5691,9 +5745,13 @@
                 return `
                     <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
                         ${hasNegativeBalance ? `
-                        <div style="background: #1a1a1d; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span style="display:inline-flex;align-items:center;">${icon('gift', 16, '#fbbf24')}</span>
-                            <span style="font-size: 12px; color: #fbbf24; font-weight: 600;">10x Commission: $${bonusCommission} waiting! Deposit to unlock.</span>
+                        <div style="background: #1a1a1d; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
+                                <span style="display:inline-flex;align-items:center;">${icon('gift', 16, '#fbbf24')}</span>
+                                <span style="font-size: 12px; color: #fbbf24; font-weight: 600;">10x Commission: $${bonusCommission} waiting!</span>
+                            </div>
+                            <div style="font-size: 13px; color: #16a34a; font-weight: 700;">Total after clearing: $${totalAfterClearing}</div>
+                            <div style="font-size: 10px; color: #71717a; margin-top: 2px;">Your deposit goes back to your account!</div>
                         </div>
                         ` : ''}
                         
