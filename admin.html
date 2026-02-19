@@ -2696,7 +2696,7 @@
                                             ${msg.image_path ? `<img src="${window.RANKSCIENCE_API_BASE_URL.replace('/api', '')}/${msg.image_path}" style="max-width: 250px; border-radius: 8px; margin-top: 8px; cursor: pointer;" onclick="window.open('${window.RANKSCIENCE_API_BASE_URL.replace('/api', '')}/${msg.image_path}', '_blank')" />` : ''}
                                         </div>
                                         <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">
-                                            ${formatTime(msg.created_at)}
+                                            ${formatTime(msg.created_at)}${msg.sender_type === 'admin' ? '<span style="margin-left: 6px; color: #10b981; font-weight: 500;">✓ Delivered</span>' : ''}
                                         </div>
                                     </div>
                                 `).join('')}
