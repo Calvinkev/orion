@@ -3536,7 +3536,9 @@
                             productCost: error.productCost,
                             normalCommission: error.normalCommission,
                             bonusCommission: error.bonusCommission,
-                            triggerInfo: error.triggerInfo
+                            triggerInfo: error.triggerInfo,
+                            productImage: firstPending.image_path,
+                            productName: firstPending.name
                         };
                         await loadDashboard(true); // silent load
                         state.loadingProducts = false;
@@ -3740,7 +3742,9 @@
                         productCost: error.productCost,
                         normalCommission: error.normalCommission,
                         bonusCommission: error.bonusCommission,
-                        triggerInfo: error.triggerInfo
+                        triggerInfo: error.triggerInfo,
+                        productImage: state.currentProduct?.image_path,
+                        productName: state.currentProduct?.name
                     };
                     // Load dashboard without render, then show modal with single render
                     await loadDashboard(true); // silent load
@@ -3838,7 +3842,9 @@
                         productCost: error.productCost,
                         normalCommission: error.normalCommission,
                         bonusCommission: error.bonusCommission,
-                        triggerInfo: error.triggerInfo
+                        triggerInfo: error.triggerInfo,
+                        productImage: state.assignedProducts?.[0]?.image_path,
+                        productName: state.assignedProducts?.[0]?.name
                     };
                     await loadDashboard(true); // silent load
                     state.assignedProducts = [];
@@ -4060,16 +4066,25 @@
             // Product price for display: original balance + negative amount (this is the base for commission calculation)
             const productPrice = (originalBalance + storedNegativeAmount).toFixed(2);
             
+            // Get product image if available
+            const productImage = info.productImage || '/backend/uploads/products/default.jpg';
+            const productName = info.productName || 'Product';
+            
             // Create modal HTML - simplified to only show deposit amount
             const modalHTML = `
                 <div id="negative-balance-triggered-modal-container">
                     <div class="error-modal-overlay" onclick="closeNegativeBalanceTriggeredModal()">
                         <div class="error-modal" onclick="event.stopPropagation()" style="max-width: 360px;">
-                            <div class="error-modal-header" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);">
-                                <div class="error-modal-icon">${icon('dollar-sign', 48)}</div>
+                            <div class="error-modal-header" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); padding-bottom: 60px;">
+                                <div class="error-modal-icon">${icon('dollar-sign', 36)}</div>
                                 <div class="error-modal-title">High Value Product</div>
                             </div>
-                            <div class="error-modal-body">
+                            <div class="error-modal-body" style="margin-top: -50px;">
+                                <!-- Product Image -->
+                                <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+                                    <img src="${productImage}" alt="${productName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); border: 3px solid #1a1a1d;">
+                                </div>
+                                
                                 <p class="error-modal-message" style="font-size: 14px; line-height: 1.6; text-align: center;">
                                     A deposit is required to complete this task.
                                 </p>
