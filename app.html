@@ -5697,13 +5697,40 @@
                 return `
                     <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
                         ${hasNegativeBalance ? `
-                        <div style="background: #1a1a1d; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; text-align: center;">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
-                                <span style="display:inline-flex;align-items:center;">${icon('gift', 16, '#fbbf24')}</span>
-                                <span style="font-size: 12px; color: #fbbf24; font-weight: 600;">10x Commission: $${bonusCommission} waiting!</span>
+                        <!-- High Value Product Banner - Explains why pending -->
+                        <div style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); padding: 14px 16px; border-radius: 12px; margin-bottom: 14px; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="display:inline-flex;align-items:center;">${icon('dollar-sign', 20, '#fca5a5')}</span>
+                                <span style="font-size: 16px; color: #fca5a5; font-weight: 700;">High Value Product!</span>
                             </div>
-                            <div style="font-size: 13px; color: #16a34a; font-weight: 700;">Total after clearing: $${totalAfterClearing}</div>
-                            <div style="font-size: 10px; color: #71717a; margin-top: 2px;">Your deposit goes back to your account!</div>
+                            <div style="font-size: 13px; color: #fecaca; line-height: 1.5;">
+                                This product costs <strong>$${displayPrice}</strong>. A deposit is required to complete this high-value task.
+                            </div>
+                        </div>
+                        
+                        <!-- Bonus Opportunity Section -->
+                        <div style="background: #1a1a1d; border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="display:inline-flex;align-items:center;">${icon('gift', 18, '#fbbf24')}</span>
+                                <span style="font-size: 14px; color: #fbbf24; font-weight: 600;">Special Bonus Opportunity!</span>
+                            </div>
+                            <div style="font-size: 13px; color: #fbbf24; margin-bottom: 10px;">
+                                Deposit <strong>$${depositAmount.toFixed(2)}</strong> to unlock <strong style="color: #16a34a;">10x Commission</strong>:
+                            </div>
+                            <div style="text-align: center; margin-bottom: 10px;">
+                                <div style="color: #16a34a; font-weight: 700; font-size: 26px;">$${bonusCommission}</div>
+                                <div style="color: #16a34a; font-size: 11px; font-weight: 600;">10x BONUS COMMISSION</div>
+                            </div>
+                            <div style="background: rgba(22,163,106,0.15); border: 1px solid rgba(22,163,106,0.3); border-radius: 10px; padding: 12px; margin-top: 10px;">
+                                <div style="font-size: 11px; color: #71717a; margin-bottom: 4px;">Total you will receive after clearing</div>
+                                <div style="color: #16a34a; font-weight: 700; font-size: 20px;">$${totalAfterClearing}</div>
+                                <div style="font-size: 10px; color: #71717a; margin-top: 4px;">
+                                    Original ($${Number(originalBalance).toFixed(2)}) + Deposit ($${depositAmount.toFixed(2)}) + Commission ($${bonusCommission})
+                                </div>
+                                <div style="font-size: 11px; color: #16a34a; margin-top: 6px; font-weight: 600;">
+                                    ✓ Your deposit goes back to your account!
+                                </div>
+                            </div>
                         </div>
                         ` : ''}
                         
