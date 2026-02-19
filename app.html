@@ -5628,58 +5628,23 @@
                 `;
             }
             
-            const completedCount = allProducts.filter(p => p.status === 'completed').length;
-            const pendingCount = allProducts.filter(p => p.status === 'in_progress' || p.status === 'pending').length;
-            const totalCommission = allProducts.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.commission_earned || 0), 0);
-            const commissionRate = state.dashboard?.commissionRate || 0.05;
+            // Separate into pending and completed, then render both as product cards
+            const pending = allProducts.filter(p => p.status === 'in_progress');
+            const completed = allProducts.filter(p => p.status === 'completed');
             
-            return `
-                <!-- Summary Cards -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-                    <div class="white-box" style="text-align: center; padding: 20px 16px;">
-                        <div style="margin-bottom: 10px;">${icon('check-circle', 32, '#10b981')}</div>
-                        <div style="font-size: 28px; font-weight: 700; color: #10b981;">${completedCount}</div>
-                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">Delivered</div>
-                    </div>
-                    <div class="white-box" style="text-align: center; padding: 20px 16px;">
-                        <div style="margin-bottom: 10px;">${icon('clock', 32, '#f59e0b')}</div>
-                        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">${pendingCount}</div>
-                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">Pending</div>
-                    </div>
-                </div>
-                
-                <div class="white-box" style="text-align: center; padding: 20px 16px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
-                        ${icon('trending-up', 24, '#00CED1')}
-                        <span style="font-size: 14px; color: #71717a;">Total Commission Earned</span>
-                    </div>
-                    <div style="font-size: 26px; font-weight: 700; color: #00CED1;">$${totalCommission.toFixed(2)}</div>
-                </div>
-                
-                <div class="white-box" style="padding: 16px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 14px;">Product Summary</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 13px; color: #71717a;">Total Products</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #ffffff;">${allProducts.length}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 13px; color: #71717a;">Delivered</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #10b981;">${completedCount}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 13px; color: #71717a;">Pending</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #f59e0b;">${pendingCount}</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 13px; color: #71717a;">Commission Rate</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #22c55e;">${(commissionRate * 100).toFixed(1)}%</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
-                        <span style="font-size: 13px; color: #71717a;">Completion Rate</span>
-                        <span style="font-size: 14px; font-weight: 700; color: #00CED1;">${allProducts.length > 0 ? Math.round((completedCount / allProducts.length) * 100) : 0}%</span>
-                    </div>
-                </div>
-            `;
+            let html = '';
+            
+            // Render pending product cards first (if any)
+            if (pending.length > 0) {
+                html += renderPendingRecords(pending);
+            }
+            
+            // Then render completed product cards
+            if (completed.length > 0) {
+                html += renderCompletedRecords(completed);
+            }
+            
+            return html;
         }
         
         function renderPendingRecords(pendingProducts) {
