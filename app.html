@@ -132,8 +132,8 @@
         }
         .vip-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 12px 40px rgba(212, 175, 55, 0.12);
-            border-color: #e8c547;
+            box-shadow: 0 12px 40px rgba(0, 206, 209, 0.12);
+            border-color: #00BFFF;
         }
 
         /* ==============================================
@@ -243,8 +243,8 @@
             font-size: 15px;
             border: 1px solid #27272a;
             border-radius: 12px;
-            background: #111113;
-            color: #ffffff;
+            background: #ffffff;
+            color: #000000;
             outline: none;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
             box-sizing: border-box;
@@ -253,7 +253,7 @@
             border-color: #00CED1;
             box-shadow: 0 0 0 3px rgba(0, 206, 209, 0.1);
         }
-        .auth-form .field input::placeholder { color: #52525b; }
+        .auth-form .field input::placeholder { color: #999999; }
         .auth-form .field .hint { font-size: 0.75rem; color: #71717a; margin-top: 4px; }
 
         .auth-form .field-password { position: relative; }
@@ -543,10 +543,10 @@
         .vip-card {
             min-width: 300px;
             background: #0a0a0a;
-            border: 1px solid rgba(212, 175, 55, 0.25);
+            border: 1px solid rgba(0, 206, 209, 0.25);
             border-radius: 20px;
             padding: 22px;
-            color: #d4af37;
+            color: #00CED1;
         }
         .vip-header {
             display: flex;
@@ -554,14 +554,14 @@
             align-items: center;
             margin-bottom: 18px;
         }
-        .vip-level { font-size: 26px; font-weight: 700; color: #d4af37; letter-spacing: -0.3px; }
+        .vip-level { font-size: 26px; font-weight: 700; color: #00CED1; letter-spacing: -0.3px; }
         .vip-icon { font-size: 44px; }
         .vip-detail {
             display: flex;
             gap: 8px;
             margin-bottom: 8px;
             font-size: 13px;
-            color: rgba(212, 175, 55, 0.85);
+            color: rgba(0, 206, 209, 0.85);
         }
 
         /* ==============================================
@@ -1369,6 +1369,7 @@
             optimizationCount: 1,
             currentAppIndex: 0,
             showPassword: false,
+            showRegPassword: false,
             currentPopup: null,
             popupPollTimer: null,
             assignedProducts: [],
@@ -2660,7 +2661,7 @@
             try {
                 const result = await authAPI.register(accountName, phone, password, inviteCode, withdrawPassword);
                 
-                showModal('Registration Successful!', `Your invite code is: ${result.inviteCode}\n\nShare this code to earn 10% of referrals' first deposit!`, 'success', 'Continue', () => navigateTo('login'));
+                showModal('Registration Successful!', '', 'success', 'Continue', () => navigateTo('login'));
             } catch (error) {
                 if (error.message.includes('invite code')) {
                     showModal('Invalid Invite Code', 'Please check your invite code and try again.', 'error', 'Try Again');
@@ -2981,6 +2982,11 @@
             render();
         }
 
+        function toggleRegPassword() {
+            state.showRegPassword = !state.showRegPassword;
+            render();
+        }
+
         // Popup System
         async function checkForPopups() {
             try {
@@ -3103,19 +3109,8 @@
                                         <div style="font-size: 20px; font-weight: 600; margin-bottom: 16px; text-align: center;">
                                             � Welcome to Orion Music Online Customer Service
                                         </div>
-                                        <div style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                                            Please select the option that best matches how we can assist you today:
-                                        </div>
-                                        <div style="background: rgba(255, 255, 255, 0.15); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                                            <div style="margin-bottom: 8px;"><strong>1.</strong> Deposit Address</div>
-                                            <div style="margin-bottom: 8px;"><strong>2.</strong> Account Reset</div>
-                                            <div style="margin-bottom: 8px;"><strong>3.</strong> Change Password</div>
-                                            <div style="margin-bottom: 8px;"><strong>4.</strong> Withdraw Password</div>
-                                            <div style="margin-bottom: 8px;"><strong>5.</strong> VIP Level Upgrade</div>
-                                            <div><strong>6.</strong> Others</div>
-                                        </div>
-                                        <div style="font-size: 13px; text-align: center; opacity: 0.95;">
-                                            Kindly reply with the number corresponding to your request, and our support team will assist you promptly.
+                                        <div style="font-size: 14px; line-height: 1.6; text-align: center;">
+                                            Our support team is here to help. Feel free to ask any questions!
                                         </div>
                                     </div>
                                 </div>
@@ -3234,13 +3229,9 @@
             // Must have either message or image
             if (!message && !state.chatImageFile) return;
             
-            // Validate option selection if welcome message is showing
+            // Validate option selection if welcome message is showing - allow any message now
             if (state.showChatWelcome && !state.chatImageFile) {
-                const validOptions = ['1', '2', '3', '4', '5', '6'];
-                if (!validOptions.includes(message)) {
-                    showToast('Please select a valid option (1-6)', 'error');
-                    return;
-                }
+                // Accept any message when welcome is showing
             }
             
             // Hide welcome message after valid first message
@@ -3372,19 +3363,8 @@
                                     <div style="font-size: 20px; font-weight: 600; margin-bottom: 16px; text-align: center;">
                                         � Welcome to Orion Music Online Customer Service
                                     </div>
-                                    <div style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">
-                                        Please select the option that best matches how we can assist you today:
-                                    </div>
-                                    <div style="background: rgba(255, 255, 255, 0.15); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-                                        <div style="margin-bottom: 8px;"><strong>1.</strong> Deposit Address</div>
-                                        <div style="margin-bottom: 8px;"><strong>2.</strong> Account Reset</div>
-                                        <div style="margin-bottom: 8px;"><strong>3.</strong> Change Password</div>
-                                        <div style="margin-bottom: 8px;"><strong>4.</strong> Withdraw Password</div>
-                                        <div style="margin-bottom: 8px;"><strong>5.</strong> VIP Level Upgrade</div>
-                                        <div><strong>6.</strong> Others</div>
-                                    </div>
-                                    <div style="font-size: 13px; text-align: center; opacity: 0.95;">
-                                        Kindly reply with the number corresponding to your request, and our support team will assist you promptly.
+                                    <div style="font-size: 14px; line-height: 1.6; text-align: center;">
+                                        Our support team is here to help. Feel free to ask any questions!
                                     </div>
                                 </div>
                             </div>
@@ -4746,7 +4726,7 @@
                                     <button type="button" onclick="showModal('Forgot Password?', 'Please contact our customer support on Telegram to reset your password.', 'info', '${t('contactSupport')}', () => window.open('https://t.me/Expert_Team_RS', '_blank'))">Forgot password?</button>
                                 </div>
                                 
-                                <button type="submit" class="submit-btn">Log In to Dashboard</button>
+                                <button type="submit" class="submit-btn">Log In</button>
                             </form>
                             
                             <div class="auth-form-footer">
@@ -5616,7 +5596,7 @@
                                 onclick="switchRecordsTab('completed')"
                                 style="flex: 1; padding: 12px; background: ${state.recordsTab === 'completed' ? 'rgba(0,206,209,0.12)' : 'rgba(255,255,255,0.04)'}; color: ${state.recordsTab === 'completed' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px;"
                             >
-                                Completed (${completedProducts.length})
+                                Delivered (${completedProducts.length})
                             </button>
                         </div>
 
@@ -5659,7 +5639,7 @@
                     <div class="white-box" style="text-align: center; padding: 20px 16px;">
                         <div style="margin-bottom: 10px;">${icon('check-circle', 32, '#10b981')}</div>
                         <div style="font-size: 28px; font-weight: 700; color: #10b981;">${completedCount}</div>
-                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">Completed</div>
+                        <div style="font-size: 13px; color: #71717a; margin-top: 4px;">Delivered</div>
                     </div>
                     <div class="white-box" style="text-align: center; padding: 20px 16px;">
                         <div style="margin-bottom: 10px;">${icon('clock', 32, '#f59e0b')}</div>
@@ -5683,7 +5663,7 @@
                         <span style="font-size: 14px; font-weight: 700; color: #ffffff;">${allProducts.length}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <span style="font-size: 13px; color: #71717a;">Completed</span>
+                        <span style="font-size: 13px; color: #71717a;">Delivered</span>
                         <span style="font-size: 14px; font-weight: 700; color: #10b981;">${completedCount}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
@@ -5813,7 +5793,7 @@
                 return `
                     <div class="white-box" style="text-align: center; padding: 40px 20px;">
                         <div style="font-size: 48px; margin-bottom: 16px;">${icon('clipboard-list', 44)}</div>
-                        <p style="color: #71717a; font-size: 16px;">No completed tasks yet</p>
+                        <p style="color: #71717a; font-size: 16px;">No delivered tasks yet</p>
                         <p style="color: #52525b; font-size: 14px; margin-top: 8px;">
                             Start submitting tasks to see your records here
                         </p>
@@ -5863,10 +5843,10 @@
                         <!-- Status Footer -->
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
                             <div style="font-size: 12px; color: #52525b;">
-                                ✓ Completed: ${formatDateSafe(product.submitted_at)}
+                                ✓ Delivered: ${formatDateSafe(product.submitted_at)}
                             </div>
                             <span style="background: #064e3b; color: #34d399; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-                                Completed
+                                Delivered
                             </span>
                         </div>
                     </div>
@@ -6045,9 +6025,15 @@
                                     <input type="tel" id="regPhone" placeholder="Enter your phone number" required>
                                 </div>
                                 
-                                <div class="field">
+                                <div class="field field-password">
                                     <label for="regPassword">Password <span class="req">*</span></label>
-                                    <input type="password" id="regPassword" placeholder="Enter your password" required>
+                                    <input type="${state.showRegPassword ? 'text' : 'password'}" id="regPassword" placeholder="Enter your password" required>
+                                    <button type="button" class="toggle-pw" onclick="toggleRegPassword()">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
                                 </div>
                                 
                                 <div class="field">
@@ -6516,7 +6502,7 @@
                 { q: 'How long do withdrawals take?', a: 'Withdrawal requests are typically processed within 24 hours during operating hours (10:00 AM - 11:00 PM).' },
                 { q: 'What if I forget my password?', a: 'Contact our customer support via the online chat or Telegram expert team to reset your password.' },
                 { q: 'Is my account balance safe?', a: 'Yes, all user funds are securely stored. The platform takes full responsibility for any accidental loss of funds as outlined in our Terms and Conditions.' },
-                { q: 'How does the referral system work?', a: 'Share your invite code with friends. When they register and start earning, you receive referral bonuses based on their activity.' }
+                { q: 'How does the referral system work?', a: 'Share your invite code with friends. When they register and start earning, you receive referral bonuses based on their activity. 9.3 In order to be eligible to using invitation code to invite referrals to join, user must first complete and register 15 consecutive working days.' }
             ];
 
             return `
