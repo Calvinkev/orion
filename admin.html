@@ -703,6 +703,20 @@
             }
         }
 
+        async function clearNegativeBalance(userId) {
+            if (!confirm('Clear this user\'s negative balance?\n\nThis will set their balance to $0 and enable the 10x commission bonus when they submit their pending product.')) {
+                return;
+            }
+            try {
+                await adminAPI.updateUserBalance(userId, 0);
+                alert('✓ Negative balance cleared!\n\nUser will receive their original balance + 10x commission when they submit their pending product.');
+                await loadUsers();
+                closeModal();
+            } catch (error) {
+                alert('Failed to clear balance: ' + error.message);
+            }
+        }
+
         async function updateUserCommission() {
             const newCommission = parseFloat(document.getElementById('newCommission').value);
             if (isNaN(newCommission) || newCommission < 0) { 
@@ -2177,6 +2191,7 @@
             }
 
             if (adminState.modalType === 'editBalance') {
+                const isNegative = item.wallet_balance < 0;
                 return `
                     <div class="modal-overlay" onclick="closeModal()">
                         <div class="modal" onclick="event.stopPropagation()">
@@ -2185,7 +2200,19 @@
                                 <p>Update wallet balance for ${item.username}</p>
                             </div>
                             <div class="modal-body">
-                                <div class="alert warning">⚠️ Current Balance: ${item.wallet_balance.toFixed(2)}</div>
+                                <div class="alert ${isNegative ? 'danger' : 'warning'}">
+                                    ${isNegative ? '🔴' : '⚠️'} Current Balance: $${item.wallet_balance.toFixed(2)}
+                                    ${isNegative ? '<br><small style="color: #fca5a5;">User has a negative balance pending deposit</small>' : ''}
+                                </div>
+                                ${isNegative ? `
+                                <div style="background: linear-gradient(135deg, #166534 0%, #15803d 100%); padding: 16px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
+                                    <div style="font-size: 14px; color: #bbf7d0; margin-bottom: 8px;">💰 User deposited to clear negative balance?</div>
+                                    <button class="btn" onclick="clearNegativeBalance(${item.id})" style="background: #22c55e; color: white; padding: 12px 24px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">
+                                        ✓ Clear Negative Balance (Set to $0)
+                                    </button>
+                                    <div style="font-size: 11px; color: #86efac; margin-top: 8px;">This will enable the 10x commission bonus on their next submission</div>
+                                </div>
+                                ` : ''}
                                 <div class="form-group">
                                     <label>New Balance (USD)</label>
                                     <input type="number" id="newBalance" step="0.01" value="${item.wallet_balance.toFixed(2)}">
