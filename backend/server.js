@@ -1970,13 +1970,21 @@ app.put('/api/admin/users/:id/balance', authMiddleware, adminMiddleware, async (
     const currentBalance = Number(user?.wallet_balance || 0);
     const newBalance = Number(balance);
     
+    console.log(`[ADMIN BALANCE] User ${userId} - Current: ${currentBalance}, New: ${newBalance}`);
+    console.log(`[ADMIN BALANCE] Trigger flags: negative_balance_triggered=${user?.negative_balance_triggered} (type: ${typeof user?.negative_balance_triggered}), balance_before_negative=${user?.balance_before_negative}`);
+    
     // If user has negative balance AND triggered flag is set AND admin is setting to 0 → enable restoration
+    // Use Number() conversion to handle MySQL TINYINT properly
+    const isTriggered = Number(user?.negative_balance_triggered) === 1 || user?.negative_balance_triggered === true;
+    
     if (currentBalance < 0 && 
-        user?.negative_balance_triggered === 1 && 
+        isTriggered && 
         user?.balance_before_negative !== null && 
         newBalance === 0) {
       
       console.log(`[ADMIN] Clearing negative balance for user ${userId} - enabling balance restoration`);
+      console.log(`[ADMIN] Setting: wallet_balance = 0, pending_balance_restoration = 1`);
+      console.log(`[ADMIN] Preserved values: balance_before_negative = ${user?.balance_before_negative}, negative_trigger_product_price = ${user?.negative_trigger_product_price}`);
       
       // Calculate the deposit amount (the absolute value of the negative balance that was cleared)
       const depositAmount = Math.abs(currentBalance);
@@ -4009,8 +4017,9 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
     
     if (inProgressProducts.length > 0) {
       // User has an in_progress product - check if it's a negative balance situation
-      const isNegativeTriggered = userRow.negative_balance_triggered === 1;
-      const hasPendingRestoration = userRow.pending_balance_restoration === 1;
+      // Use Number() conversion to handle MySQL TINYINT properly
+      const isNegativeTriggered = Number(userRow.negative_balance_triggered) === 1;
+      const hasPendingRestoration = Number(userRow.pending_balance_restoration) === 1;
       
       if (isNegativeTriggered && !hasPendingRestoration) {
         // Negative balance triggered but admin hasn't cleared yet - must deposit
@@ -4156,7 +4165,8 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
         triggerCheckStart.negative_balance_set !== null && 
         triggerCheckStart.negative_balance_submission !== null && 
         triggerCheckStart.negative_balance_amount !== null;
-    const alreadyTriggeredStart = triggerCheckStart?.negative_balance_triggered === 1 || triggerCheckStart?.negative_balance_triggered === true;
+    // Use Number() conversion to handle MySQL TINYINT properly
+    const alreadyTriggeredStart = Number(triggerCheckStart?.negative_balance_triggered) === 1;
 
     if (hasTriggerSetStart && !alreadyTriggeredStart) {
       const triggerSet = Number(triggerCheckStart.negative_balance_set);
@@ -4399,12 +4409,27 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
     
     const newTasksCompleted = currentTasksCompleted + 1;
     
+    // Debug: Log all trigger flags
+    console.log(`[SUBMIT] User ${userId} trigger check values:`);
+    console.log(`[SUBMIT]   triggerCheck exists: ${!!triggerCheck}`);
+    console.log(`[SUBMIT]   pending_balance_restoration: ${triggerCheck?.pending_balance_restoration} (type: ${typeof triggerCheck?.pending_balance_restoration})`);
+    console.log(`[SUBMIT]   negative_balance_triggered: ${triggerCheck?.negative_balance_triggered} (type: ${typeof triggerCheck?.negative_balance_triggered})`);
+    console.log(`[SUBMIT]   balance_before_negative: ${triggerCheck?.balance_before_negative} (type: ${typeof triggerCheck?.balance_before_negative})`);
+    console.log(`[SUBMIT]   negative_trigger_product_price: ${triggerCheck?.negative_trigger_product_price} (type: ${typeof triggerCheck?.negative_trigger_product_price})`);
+    
     // FIRST: Check if user has pending balance restoration (cleared negative, now gets reward)
-    if (triggerCheck && (Number(triggerCheck.pending_balance_restoration) === 1 || triggerCheck.pending_balance_restoration === true)) {
+    const isPendingRestoration = Number(triggerCheck?.pending_balance_restoration) === 1 || triggerCheck?.pending_balance_restoration === true;
+    console.log(`[SUBMIT] isPendingRestoration check: ${isPendingRestoration}`);
+    console.log(`[SUBMIT] Number(pending_balance_restoration): ${Number(triggerCheck?.pending_balance_restoration)}`);
+    
+    if (triggerCheck && isPendingRestoration) {
+      console.log(`[SUBMIT] *** ENTERING RESTORATION PATH ***`);
       // User cleared their negative balance, now they get the reward!
       const originalBalance = Number(triggerCheck.balance_before_negative || 0);
       // NOTE: negative_trigger_product_price now stores the negativeAmount (changed from productCost)
       const negativeAmount = Number(triggerCheck.negative_trigger_product_price || 0);
+      
+      console.log(`[SUBMIT] *** VALUES: originalBalance=${originalBalance}, negativeAmount=${negativeAmount} ***`);
       
       // The deposit amount is the same as the negativeAmount (what the user deposited to clear the negative balance)
       const depositAmount = negativeAmount;
@@ -4490,7 +4515,8 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
         triggerCheck.negative_balance_set !== null && 
         triggerCheck.negative_balance_submission !== null && 
         triggerCheck.negative_balance_amount !== null;
-    const alreadyTriggered = triggerCheck?.negative_balance_triggered === 1 || triggerCheck?.negative_balance_triggered === true;
+    // Use Number() conversion to handle MySQL TINYINT properly
+    const alreadyTriggered = Number(triggerCheck?.negative_balance_triggered) === 1;
     
     console.log(`[SUBMIT] - hasTriggerSet: ${hasTriggerSet}, alreadyTriggered: ${alreadyTriggered}`);
     
@@ -4565,6 +4591,10 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
         });
       }
     }
+
+    // If we get here, we're taking the NORMAL submission path (not restoration)
+    console.log(`[SUBMIT] *** TAKING NORMAL SUBMISSION PATH (not restoration) ***`);
+    console.log(`[SUBMIT] *** Why: isPendingRestoration=${isPendingRestoration}, triggerCheck exists=${!!triggerCheck} ***`);
 
     // Check if user has negative balance - they must deposit before submitting
     if (currentBalance < 0) {
