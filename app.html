@@ -4060,49 +4060,27 @@
             // Product price for display: original balance + negative amount (this is the base for commission calculation)
             const productPrice = (originalBalance + storedNegativeAmount).toFixed(2);
             
-            // Create modal HTML
+            // Create modal HTML - simplified to only show deposit amount
             const modalHTML = `
                 <div id="negative-balance-triggered-modal-container">
                     <div class="error-modal-overlay" onclick="closeNegativeBalanceTriggeredModal()">
-                        <div class="error-modal" onclick="event.stopPropagation()" style="max-width: 400px;">
+                        <div class="error-modal" onclick="event.stopPropagation()" style="max-width: 360px;">
                             <div class="error-modal-header" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);">
                                 <div class="error-modal-icon">${icon('dollar-sign', 48)}</div>
-                                <div class="error-modal-title">High Value Product!</div>
+                                <div class="error-modal-title">High Value Product</div>
                             </div>
                             <div class="error-modal-body">
-                                <p class="error-modal-message" style="font-size: 14px; line-height: 1.6;">
-                                    This product costs <strong>$${productPrice}</strong>. A deposit is required to complete this high-value task.
+                                <p class="error-modal-message" style="font-size: 14px; line-height: 1.6; text-align: center;">
+                                    A deposit is required to complete this task.
                                 </p>
                                 
-                                <div style="background: #1a1a1d; border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 16px; margin: 16px 0;">
-                                    <div style="font-weight: 600; color: #fbbf24; margin-bottom: 8px;">${icon('gift', 16, '#fbbf24')} Special Bonus Opportunity!</div>
-                                    <div style="font-size: 13px; color: #fbbf24;">
-                                        Deposit <strong>$${negativeAmount.toFixed(2)}</strong> to unlock <strong style="color: #16a34a;">10x Commission</strong>:
-                                    </div>
-                                    <div style="text-align: center; margin-top: 12px;">
-                                        <div style="color: #16a34a; font-weight: 700; font-size: 24px;">$${bonusCommission.toFixed(2)}</div>
-                                        <div style="color: #16a34a; font-size: 11px; font-weight: 600;">10x BONUS COMMISSION</div>
-                                    </div>
-                                </div>
-                                
-                                <div style="background: #1a1a1d; border: 1px solid rgba(22,163,106,0.3); border-radius: 12px; padding: 16px; margin: 0 0 16px 0; text-align: center;">
-                                    <div style="font-size: 12px; color: #71717a; margin-bottom: 4px;">Total you will receive after clearing</div>
-                                    <div style="color: #16a34a; font-weight: 700; font-size: 22px;">$${totalAfterClearing}</div>
-                                    <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
-                                        Original balance ($${Number(originalBalance).toFixed(2)}) + Your deposit ($${negativeAmount.toFixed(2)}) + Commission ($${bonusCommission.toFixed(2)})
-                                    </div>
-                                    <div style="font-size: 11px; color: #16a34a; margin-top: 6px; font-weight: 600;">
-                                        Your deposit goes back to your account!
-                                    </div>
-                                </div>
-                                
-                                <div class="error-modal-balance" style="background: #1a1a1d;">
-                                    <div class="error-modal-balance-label">Required Deposit</div>
+                                <div class="error-modal-balance" style="background: #1a1a1d; margin: 20px 0;">
+                                    <div class="error-modal-balance-label">Deposit</div>
                                     <div class="error-modal-balance-amount" style="color: #dc2626;">$${negativeAmount.toFixed(2)}</div>
                                 </div>
                                 
-                                <p style="font-size: 12px; color: #71717a; margin-top: 12px; text-align: center;">
-                                    Your product is saved. Complete the deposit to submit and earn your bonus!
+                                <p style="font-size: 12px; color: #71717a; text-align: center; margin-bottom: 16px;">
+                                    Your product is saved in Records. View details there.
                                 </p>
                                 
                                 <div class="error-modal-buttons">
@@ -5696,51 +5674,47 @@
                 
                 return `
                     <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
-                        ${hasNegativeBalance ? `
-                        <!-- High Value Product Banner - Explains why pending -->
-                        <div style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); padding: 14px 16px; border-radius: 12px; margin-bottom: 14px; text-align: center;">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
-                                <span style="display:inline-flex;align-items:center;">${icon('dollar-sign', 20, '#fca5a5')}</span>
-                                <span style="font-size: 16px; color: #fca5a5; font-weight: 700;">High Value Product!</span>
-                            </div>
-                            <div style="font-size: 13px; color: #fecaca; line-height: 1.5;">
-                                This product costs <strong>$${displayPrice}</strong>. A deposit is required to complete this high-value task.
-                            </div>
-                        </div>
-                        
-                        <!-- Bonus Opportunity Section -->
-                        <div style="background: #1a1a1d; border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
-                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
-                                <span style="display:inline-flex;align-items:center;">${icon('gift', 18, '#fbbf24')}</span>
-                                <span style="font-size: 14px; color: #fbbf24; font-weight: 600;">Special Bonus Opportunity!</span>
-                            </div>
-                            <div style="font-size: 13px; color: #fbbf24; margin-bottom: 10px;">
-                                Deposit <strong>$${depositAmount.toFixed(2)}</strong> to unlock <strong style="color: #16a34a;">10x Commission</strong>:
-                            </div>
-                            <div style="text-align: center; margin-bottom: 10px;">
-                                <div style="color: #16a34a; font-weight: 700; font-size: 26px;">$${bonusCommission}</div>
-                                <div style="color: #16a34a; font-size: 11px; font-weight: 600;">10x BONUS COMMISSION</div>
-                            </div>
-                            <div style="background: rgba(22,163,106,0.15); border: 1px solid rgba(22,163,106,0.3); border-radius: 10px; padding: 12px; margin-top: 10px;">
-                                <div style="font-size: 11px; color: #71717a; margin-bottom: 4px;">Total you will receive after clearing</div>
-                                <div style="color: #16a34a; font-weight: 700; font-size: 20px;">$${totalAfterClearing}</div>
-                                <div style="font-size: 10px; color: #71717a; margin-top: 4px;">
-                                    Original ($${Number(originalBalance).toFixed(2)}) + Deposit ($${depositAmount.toFixed(2)}) + Commission ($${bonusCommission})
-                                </div>
-                                <div style="font-size: 11px; color: #16a34a; margin-top: 6px; font-weight: 600;">
-                                    ✓ Your deposit goes back to your account!
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-                        
-                        <!-- Product Image -->
+                        <!-- Product Image - Always at top -->
                         <div style="display: flex; justify-content: center; margin-bottom: 12px;">
                             <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                         </div>
                         
                         <!-- Product Name -->
                         <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">${product.name}</h3>
+                        
+                        ${hasNegativeBalance ? `
+                        <!-- High Value Product Banner -->
+                        <div style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px;">
+                                <span style="display:inline-flex;align-items:center;">${icon('dollar-sign', 18, '#fca5a5')}</span>
+                                <span style="font-size: 14px; color: #fca5a5; font-weight: 700;">High Value Product</span>
+                            </div>
+                            <div style="font-size: 12px; color: #fecaca;">Deposit required to complete this task</div>
+                        </div>
+                        
+                        <!-- Bonus Info Section - Simplified -->
+                        <div style="background: #1a1a1d; border: 1px solid rgba(245,158,11,0.3); border-radius: 12px; padding: 14px; margin-bottom: 14px;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px;">
+                                <span style="display:inline-flex;align-items:center;">${icon('gift', 16, '#fbbf24')}</span>
+                                <span style="font-size: 13px; color: #fbbf24; font-weight: 600;">10x Commission Bonus</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                <span style="font-size: 12px; color: #71717a;">Required Deposit</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #dc2626;">$${depositAmount.toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                <span style="font-size: 12px; color: #71717a;">10x Bonus Commission</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #16a34a;">$${bonusCommission}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                                <span style="font-size: 12px; color: #71717a;">Total After Clearing</span>
+                                <span style="font-size: 14px; font-weight: 700; color: #16a34a;">$${totalAfterClearing}</span>
+                            </div>
+                            <div style="font-size: 11px; color: #16a34a; margin-top: 10px; font-weight: 600; text-align: center;">
+                                ✓ Your deposit goes back to your account!
+                            </div>
+                        </div>
+                        ` : ''}
                         
                         <!-- Rating -->
                         <div style="color: #fbbf24; font-size: 20px; margin-bottom: 14px;">★★★★★</div>
