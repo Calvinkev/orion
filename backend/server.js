@@ -775,6 +775,9 @@ function sanitizeUser(user) {
     // For bonus commission calculation on pending products with negative balance
     balance_before_negative: rest.balance_before_negative ? Number(rest.balance_before_negative) : null,
     negative_trigger_amount: rest.negative_trigger_product_price ? Number(rest.negative_trigger_product_price) : null,
+    // Negative balance trigger flags (ensure proper number type for strict equality checks)
+    negative_balance_triggered: Number(rest.negative_balance_triggered) || 0,
+    pending_balance_restoration: Number(rest.pending_balance_restoration) || 0,
     // Payment method settings
     withdraw_type: rest.withdraw_type || null,
     saved_wallet_address: rest.saved_wallet_address || null,
