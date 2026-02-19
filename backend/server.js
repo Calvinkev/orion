@@ -3989,9 +3989,9 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Product already completed' });
     }
     
-    // Get user details including task completion status
+    // Get user details including task completion status and negative balance flags
     const [[userRow]] = await conn.query(
-      'SELECT level, wallet_balance, current_set, tasks_completed_today FROM users WHERE id = ? LIMIT 1',
+      'SELECT level, wallet_balance, current_set, tasks_completed_today, negative_balance_triggered, pending_balance_restoration, balance_before_negative, negative_trigger_product_price FROM users WHERE id = ? LIMIT 1',
       [userId]
     );
     
@@ -3999,6 +3999,43 @@ app.post('/api/user/start-product/:id', authMiddleware, async (req, res) => {
     const currentBalance = Number(userRow.wallet_balance || 0);
     const currentSet = userRow.current_set || 1;
     const tasksCompletedToday = userRow.tasks_completed_today || 0;
+    
+    // Block starting new products if user has a pending negative balance product to submit first
+    // Check if user has any in_progress products (must submit those first)
+    const [inProgressProducts] = await conn.query(
+      'SELECT id FROM user_products WHERE user_id = ? AND status = ? LIMIT 1',
+      [userId, 'in_progress']
+    );
+    
+    if (inProgressProducts.length > 0) {
+      // User has an in_progress product - check if it's a negative balance situation
+      const isNegativeTriggered = userRow.negative_balance_triggered === 1;
+      const hasPendingRestoration = userRow.pending_balance_restoration === 1;
+      
+      if (isNegativeTriggered && !hasPendingRestoration) {
+        // Negative balance triggered but admin hasn't cleared yet - must deposit
+        const shortfall = Math.abs(currentBalance);
+        await conn.rollback();
+        return res.status(400).json({
+          error: 'NEGATIVE_BALANCE',
+          message: `You have a pending product that requires a deposit. Please deposit $${shortfall.toFixed(2)} before continuing.`,
+          shortfall: shortfall,
+          currentBalance: currentBalance,
+          requiredDeposit: shortfall,
+          hasPendingProduct: true
+        });
+      }
+      
+      if (hasPendingRestoration) {
+        // Admin cleared the negative balance - user must submit the pending product first
+        await conn.rollback();
+        return res.status(400).json({
+          error: 'PENDING_SUBMISSION_REQUIRED',
+          message: 'You have a pending product to submit first. Go to Records to submit it.',
+          hasPendingProduct: true
+        });
+      }
+    }
     
     // Check if user has completed their current set before allowing them to start a product
     const taskLimits = getTaskLimitsForLevel(userLevel);
@@ -4363,7 +4400,7 @@ app.post('/api/user/submit-product/:id', authMiddleware, async (req, res) => {
     const newTasksCompleted = currentTasksCompleted + 1;
     
     // FIRST: Check if user has pending balance restoration (cleared negative, now gets reward)
-    if (triggerCheck && triggerCheck.pending_balance_restoration === 1) {
+    if (triggerCheck && (Number(triggerCheck.pending_balance_restoration) === 1 || triggerCheck.pending_balance_restoration === true)) {
       // User cleared their negative balance, now they get the reward!
       const originalBalance = Number(triggerCheck.balance_before_negative || 0);
       // NOTE: negative_trigger_product_price now stores the negativeAmount (changed from productCost)

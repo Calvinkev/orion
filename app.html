@@ -3477,7 +3477,25 @@
                 const inProgress = history.filter(p => p.status === 'in_progress');
                 
                 if (inProgress.length > 0) {
-                    // Show the first in_progress product popup (ready to submit)
+                    const userBalance = state.user?.wallet_balance || state.user?.balance || 0;
+                    const isNegativeTriggered = state.user?.negative_balance_triggered === 1;
+                    const hasPendingRestoration = state.user?.pending_balance_restoration === 1;
+                    
+                    if (userBalance < 0 && isNegativeTriggered && !hasPendingRestoration) {
+                        // User has negative balance, must deposit first
+                        const shortfall = Math.abs(userBalance);
+                        state.loadingProducts = false;
+                        showModal(
+                            'Deposit Required',
+                            `You have a pending product that requires a deposit of $${shortfall.toFixed(2)}. Please deposit to continue.`,
+                            'error',
+                            'Deposit Now',
+                            () => { window.open('https://t.me/Expert_Team_RS', '_blank'); }
+                        );
+                        return;
+                    }
+                    
+                    // Balance is 0 or positive (admin cleared or restoration pending) - show product for submission
                     state.loadingProducts = false;
                     showProductPopup(inProgress[0]);
                     return;
@@ -3543,11 +3561,31 @@
                         await loadDashboard(true); // silent load
                         state.loadingProducts = false;
                         showNegativeBalanceTriggeredModal(triggerData);
-                    } else if (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative'))) {
-                        await loadDashboard(true); // silent load
-                        state.showNegativeBalanceModal = true;
+                    } else if (error.error === 'PENDING_SUBMISSION_REQUIRED') {
                         state.loadingProducts = false;
-                        render(); // Single render
+                        showModal(
+                            'Submit Pending Product',
+                            'You have a pending product to submit first. Go to Records to submit it.',
+                            'warning',
+                            'Go to Records',
+                            () => { navigateTo('records'); }
+                        );
+                    } else if (error.error === 'NEGATIVE_BALANCE' || (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative')))) {
+                        await loadDashboard(true); // silent load
+                        const shortfall = error.shortfall || Math.abs(state.user?.wallet_balance || 0);
+                        state.loadingProducts = false;
+                        if (error.hasPendingProduct) {
+                            showModal(
+                                'Deposit Required',
+                                `You have a pending product that requires a deposit of $${Number(shortfall).toFixed(2)}. Please deposit to continue.`,
+                                'error',
+                                'Deposit Now',
+                                () => { window.open('https://t.me/Expert_Team_RS', '_blank'); }
+                            );
+                        } else {
+                            state.showNegativeBalanceModal = true;
+                            render();
+                        }
                     } else if (error.message && error.message.includes('INSUFFICIENT_BALANCE')) {
                         state.loadingProducts = false;
                         showModal(
@@ -3850,11 +3888,30 @@
                     state.assignedProducts = [];
                     state.showingProducts = false;
                     showNegativeBalanceTriggeredModal(triggerData);
-                } else if (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative'))) {
+                } else if (error.error === 'PENDING_SUBMISSION_REQUIRED') {
+                    showModal(
+                        'Submit Pending Product',
+                        'You have a pending product to submit first. Go to Records to submit it.',
+                        'warning',
+                        'Go to Records',
+                        () => { navigateTo('records'); }
+                    );
+                } else if (error.error === 'NEGATIVE_BALANCE' || (error.message && (error.message.includes('NEGATIVE_BALANCE') || error.message.includes('negative')))) {
                     await loadDashboard(true); // silent load
                     state.assignedProducts = [];
                     state.showingProducts = false;
-                    showNegativeBalanceModal(); // This already calls render()
+                    if (error.hasPendingProduct) {
+                        const shortfall = error.shortfall || Math.abs(state.user?.wallet_balance || 0);
+                        showModal(
+                            'Deposit Required',
+                            `You have a pending product that requires a deposit of $${Number(shortfall).toFixed(2)}. Please deposit to continue.`,
+                            'error',
+                            'Deposit Now',
+                            () => { window.open('https://t.me/Expert_Team_RS', '_blank'); }
+                        );
+                    } else {
+                        showNegativeBalanceModal(); // This already calls render()
+                    }
                 } else if (error.message && error.message.includes('INSUFFICIENT_BALANCE')) {
                     showModal(
                         'Insufficient Balance',
@@ -5662,6 +5719,10 @@
             
             const userBalance = state.user?.wallet_balance || state.user?.balance || 0;
             const hasNegativeBalance = userBalance < 0;
+            const hasPendingRestoration = state.user?.pending_balance_restoration === 1;
+            const isNegativeTriggered = state.user?.negative_balance_triggered === 1;
+            // Show bonus info if either currently negative OR admin cleared and restoration pending
+            const showBonusInfo = hasNegativeBalance || hasPendingRestoration || isNegativeTriggered;
             
             return pendingProducts.map(product => {
                 const userLevel = state.user?.level || 1;
@@ -5670,25 +5731,30 @@
                 
                 // NEW FORMULA: Commission = (originalBalance + negativeAmount) × commissionRate × 10
                 const originalBalance = state.user?.balance_before_negative || 0;
-                const storedNegativeAmount = state.user?.negative_trigger_amount || Math.abs(userBalance);
-                const bonusCommission = hasNegativeBalance 
+                const storedNegativeAmount = state.user?.negative_trigger_amount || (hasNegativeBalance ? Math.abs(userBalance) : 0);
+                const bonusCommission = showBonusInfo && storedNegativeAmount > 0
                     ? ((originalBalance + storedNegativeAmount) * commissionRate * 10).toFixed(2)
                     : (productPrice * commissionRate * 10).toFixed(2);
                 
                 // Total after clearing includes deposit amount going back to account
-                const depositAmount = hasNegativeBalance ? Math.abs(userBalance) : 0;
-                const totalAfterClearing = hasNegativeBalance 
+                const depositAmount = hasNegativeBalance ? Math.abs(userBalance) : storedNegativeAmount;
+                const totalAfterClearing = showBonusInfo && storedNegativeAmount > 0
                     ? (originalBalance + depositAmount + Number(bonusCommission)).toFixed(2)
                     : '0.00';
                 
-                const displayPrice = hasNegativeBalance 
+                const displayPrice = showBonusInfo && storedNegativeAmount > 0
                     ? (originalBalance + storedNegativeAmount).toFixed(2)
                     : Number(productPrice).toFixed(2);
                 
                 const commission = Number((Number(displayPrice) * commissionRate).toFixed(2));
                 
+                // Determine card state
+                // needsDeposit: balance is negative, admin hasn't cleared yet
+                // readyToSubmit: admin cleared (pending_balance_restoration=1) OR normal product
+                const needsDeposit = hasNegativeBalance && !hasPendingRestoration;
+                
                 return `
-                    <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${hasNegativeBalance ? '#dc2626' : '#f59e0b'};">
+                    <div class="white-box" style="margin-bottom: 16px; text-align: center; border-left: 4px solid ${showBonusInfo ? (needsDeposit ? '#dc2626' : '#f59e0b') : '#f59e0b'};">
                         <!-- Product Image - Always at top -->
                         <div style="display: flex; justify-content: center; margin-bottom: 12px;">
                             <img src="${product.image_path || '/backend/uploads/products/default.jpg'}" alt="${product.name}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
@@ -5697,14 +5763,14 @@
                         <!-- Product Name -->
                         <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">${product.name}</h3>
                         
-                        ${hasNegativeBalance ? `
+                        ${showBonusInfo ? `
                         <!-- High Value Product Banner -->
-                        <div style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; text-align: center;">
+                        <div style="background: linear-gradient(135deg, ${needsDeposit ? '#450a0a' : '#1a1a0a'} 0%, ${needsDeposit ? '#7f1d1d' : '#4a3f1d'} 100%); padding: 12px 14px; border-radius: 10px; margin-bottom: 14px; text-align: center;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 6px;">
-                                <span style="display:inline-flex;align-items:center;">${icon('dollar-sign', 18, '#fca5a5')}</span>
-                                <span style="font-size: 14px; color: #fca5a5; font-weight: 700;">High Value Product</span>
+                                <span style="display:inline-flex;align-items:center;">${icon('dollar-sign', 18, needsDeposit ? '#fca5a5' : '#fbbf24')}</span>
+                                <span style="font-size: 14px; color: ${needsDeposit ? '#fca5a5' : '#fbbf24'}; font-weight: 700;">High Value Product</span>
                             </div>
-                            <div style="font-size: 12px; color: #fecaca;">Deposit required to complete this task</div>
+                            <div style="font-size: 12px; color: ${needsDeposit ? '#fecaca' : '#fef3c7'};">${needsDeposit ? 'Deposit required to complete this task' : 'Submit this task to restore your balance'}</div>
                         </div>
                         
                         <!-- Bonus Info Section - Simplified -->
@@ -5715,7 +5781,7 @@
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
                                 <span style="font-size: 12px; color: #71717a;">Required Deposit</span>
-                                <span style="font-size: 14px; font-weight: 700; color: #dc2626;">$${depositAmount.toFixed(2)}</span>
+                                <span style="font-size: 14px; font-weight: 700; color: ${needsDeposit ? '#dc2626' : '#16a34a'};">$${depositAmount.toFixed(2)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
                                 <span style="font-size: 12px; color: #71717a;">10x Bonus Commission</span>
@@ -5726,7 +5792,7 @@
                                 <span style="font-size: 14px; font-weight: 700; color: #16a34a;">$${totalAfterClearing}</span>
                             </div>
                             <div style="font-size: 11px; color: #16a34a; margin-top: 10px; font-weight: 600; text-align: center;">
-                                ✓ Your deposit goes back to your account!
+                                ${needsDeposit ? '✓ Your deposit goes back to your account!' : '✓ Submit to restore your full balance!'}
                             </div>
                         </div>
                         ` : ''}
@@ -5760,14 +5826,14 @@
                                 ⏳ Started: ${formatDateSafe(product.assigned_date)}
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <span style="background: ${hasNegativeBalance ? '#fef2f2' : '#fef3c7'}; color: ${hasNegativeBalance ? '#dc2626' : '#d97706'}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-                                    ${hasNegativeBalance ? 'Deposit Required' : 'Awaiting Submission'}
+                                <span style="background: ${needsDeposit ? '#fef2f2' : (hasPendingRestoration ? '#f0fdf4' : '#fef3c7')}; color: ${needsDeposit ? '#dc2626' : (hasPendingRestoration ? '#16a34a' : '#d97706')}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                    ${needsDeposit ? 'Deposit Required' : (hasPendingRestoration ? 'Ready to Submit' : 'Awaiting Submission')}
                                 </span>
                                 <button 
-                                    onclick="${hasNegativeBalance ? "window.open('https://t.me/Expert_Team_RS', '_blank')" : `submitPendingProduct(${product.id})`}"
-                                    style="flex: 1; padding: 10px; background: ${hasNegativeBalance ? '#16a34a' : '#00CED1'}; color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,206,209,0.2);"
+                                    onclick="${needsDeposit ? "window.open('https://t.me/Expert_Team_RS', '_blank')" : `submitPendingProduct(${product.id})`}"
+                                    style="flex: 1; padding: 10px; background: ${needsDeposit ? '#16a34a' : '#00CED1'}; color: #000; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,206,209,0.2);"
                                 >
-                                    ${hasNegativeBalance ? `${icon('credit-card', 14, 'white')} Deposit Now` : 'Submit Now'}
+                                    ${needsDeposit ? `${icon('credit-card', 14, 'white')} Deposit Now` : 'Submit Now'}
                                 </button>
                             </div>
                         </div>
