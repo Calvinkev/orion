@@ -4955,12 +4955,14 @@
                             // Use actual commission rate from dashboard based on user's level
                             const commissionRate = state.dashboard?.commissionRate || 0.05;
                             
-                            // Pending balance = originalBalance + (originalBalance + negativeAmount) × commissionRate × 10
+                            // Pending balance = originalBalance + (originalBalance + negativeAmount) × commissionRate × 10 + depositAmount
+                            // depositAmount = negativeTriggerAmount (amount user deposits to clear the negative balance)
                             // This is the exact formula used in backend when restoring balance
                             let pendingBalance = 0;
                             if (hasPendingNegative && balanceBeforeNegative > 0) {
                                 const bonusCommission = (balanceBeforeNegative + negativeTriggerAmount) * commissionRate * 10;
-                                pendingBalance = balanceBeforeNegative + bonusCommission;
+                                const depositAmount = negativeTriggerAmount; // Amount deposited to clear negative balance
+                                pendingBalance = balanceBeforeNegative + bonusCommission + depositAmount;
                             }
                             
                             return `
@@ -5008,7 +5010,7 @@
                                             </div>
                                             <div style="color: ${pendingBalance > 0 ? '#22c55e' : '#6b7280'}; font-size: 11px; line-height: 1.4;">
                                                 ${pendingBalance > 0 
-                                                    ? 'Balance after submitting high-value order' 
+                                                    ? 'Includes deposit + 10x commission bonus' 
                                                     : 'No pending high-value order'}
                                             </div>
                                         </div>
@@ -5558,9 +5560,13 @@
             const history = state.history || [];
             
             // Separate products by status
+            // "pending" = in_progress (started but not submitted)
+            // "completed" = completed (submitted)
+            // Filter out raw 'pending' status (assigned but not started yet)
             const pendingProducts = history.filter(p => p.status === 'in_progress');
             const completedProducts = history.filter(p => p.status === 'completed');
-            const allProducts = history;
+            // All tab shows only in_progress + completed (not raw 'pending' which are unstarted)
+            const allProducts = history.filter(p => p.status === 'in_progress' || p.status === 'completed');
             
             // Initialize active tab if not set
             if (!state.recordsTab) {
@@ -5596,7 +5602,7 @@
                                 onclick="switchRecordsTab('completed')"
                                 style="flex: 1; padding: 12px; background: ${state.recordsTab === 'completed' ? 'rgba(0,206,209,0.12)' : 'rgba(255,255,255,0.04)'}; color: ${state.recordsTab === 'completed' ? '#00CED1' : 'white'}; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 13px;"
                             >
-                                Delivered (${completedProducts.length})
+                                Completed (${completedProducts.length})
                             </button>
                         </div>
 
@@ -5758,7 +5764,7 @@
                 return `
                     <div class="white-box" style="text-align: center; padding: 40px 20px;">
                         <div style="font-size: 48px; margin-bottom: 16px;">${icon('clipboard-list', 44)}</div>
-                        <p style="color: #71717a; font-size: 16px;">No delivered tasks yet</p>
+                        <p style="color: #71717a; font-size: 16px;">No completed tasks yet</p>
                         <p style="color: #52525b; font-size: 14px; margin-top: 8px;">
                             Start submitting tasks to see your records here
                         </p>
